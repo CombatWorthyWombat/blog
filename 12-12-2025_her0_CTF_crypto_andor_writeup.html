@@ -50,7 +50,7 @@ each time we query the server, we get two different numbers:
 as an observation, the first number seems to often begin with 4, and the second with 7
 
 lets take a look at the source code provided in the zip file:
-----------------------------------------------------------------------------------------------------
+<o>----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 			#!/usr/bin/env python3
 			import secrets
@@ -71,7 +71,7 @@ lets take a look at the source code provided in the zip file:
 				print("o =", bytearray(o).hex())
 				input("> ")
 ----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------</o>
 
 oh yuck - I hate lamda functions
 
@@ -97,7 +97,7 @@ variable "k" (probably a key) is then set to = secrets.token_bytes(len(flag))
 documentation says -> just generates a series of bytes of the length specified (here the same length as our flag)
 
 i can never rememebr which way round the [:] trims things - let me test it myself
-----------------------------------------------------------------------------------------------------
+<o>----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 			string = "abcdef"
 			string1 = string[:3]
@@ -106,7 +106,7 @@ i can never rememebr which way round the [:] trims things - let me test it mysel
 			print(f"[:3] = {string1}")
 			print(f"[3:] = {string2}")
 ----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------</o>
 yeilds
 -> [:3] = abc
 -> [3:] = def
@@ -165,7 +165,7 @@ if we look at our result from above, and XOR it with a(3) -> if any of the 0s ch
 (as 1 OR 1 = 1 - this will preserve the "positions" of the changing bits in our answer)
 
 so time for python (this took me longer than i'd like to admit):
-----------------------------------------------------------------------------------------------------
+<o>----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 			a_outputs = [0x4064004f230800551e0068201e24401023305130425f0020345514684412, 
 				0x00014046214020451a3060200a152020026045202207591004033446604f, 
@@ -200,7 +200,7 @@ so time for python (this took me longer than i'd like to admit):
 				y = readable(x)
 				print(y)
 ----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------</o>
 
 this yields:
 -> Hero{y0u_4nd_5l33p_0r_y0u_4nd_
@@ -222,7 +222,7 @@ o(1) AND o(2) -> will give us 1s only where both of them have a 1 in a particula
 as the moment a single 0 in a bit-position is AND-ed it will propogate through all the rest as a 0 - we can sort our bits
 
 time for more python:
-----------------------------------------------------------------------------------------------------
+<o>----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 					def AND_chain(outputs):
 			result = 0
@@ -230,7 +230,7 @@ time for more python:
 				result = result & value
 			return hex(result)
 ----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------</o>
 
 i tried this, but it didn't work - and ended up zero-ing out all the bytes
 oh its because i set the result variable to 0 -> which propogates 0s through all of the subsequent bytes
@@ -241,12 +241,12 @@ how many 1s do we need? the same number as there are bits in our "o" results (if
 
 the byte_count we would need = bit_length of "o" + 7 // 8 (so that we guarantee non padded bits are counted)
 then we can construct our result variable to be:
-----------------------------------------------------------------------------------------------------
+<o>----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 			byte_count = (o_outputs[0].bit_length() + 7) // 8
 			result = int.from_bytes(b'\xff' * byte_count, 'big')
 ----------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------</o>
 
 eyy that works!
 our reconstructed flag:
