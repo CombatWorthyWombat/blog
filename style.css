@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "DejaVu Sans Mono";
-  src: url("/DejaVuSansMono.woff2") format("woff2");
+  font-family: "UnifontExMono";
+  src: url("UnifontExMono.woff") format("woff2");
 }
 
 body {
@@ -9,7 +9,7 @@ body {
 }
 
 pre {
-  font-family: "DejaVu Sans Mono";
+  font-family: "UnifontExMono";
   font-size: 18px;
   line-height: 1;
   padding-left: 40px;
