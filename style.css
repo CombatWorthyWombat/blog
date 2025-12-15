@@ -26,9 +26,8 @@ pu { color: #D3869B; } /* purple - cant use p as creates new paragraph*/
 a,
 a:visited,
 a:active,
+a:hover,
 a:focus { color: #83A598; text-decoration: none; } /* turquiose - use for links */
-
-a:hover { color: #B8BB26; text-decoration: none; }
 
 o { color: #FE8019; } /* orange */
 f { color: #EBDBB2; } /* muted white */
