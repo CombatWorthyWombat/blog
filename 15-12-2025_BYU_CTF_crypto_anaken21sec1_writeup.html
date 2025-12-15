@@ -1,3 +1,17 @@
+<head>
+  <meta charset="utf-8">
+  <title>CWW.blog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div style="display: inline-block; text-align: left;"><pre>   
+<bl>╔══════════════════════════════════════════════════════════════════════════════════╝
+║ <w>CRYPTO ANAKEN21SEC1 BYUCTF WRITEUP</w>                                    <w>[15/12/2025]</w>
+╚══════════════════════════════════════════════════════════════════════════════════╗</bl>
+<bl>┌──┐
+<a href="index.html">HOME</a>
+└──┘</bl>
 we are given the following:
 
 a key: "orygwktcjpb"
@@ -6,7 +20,7 @@ an encrypted flag: "cnpiaytjyzggnnnktjzcvuzjexxkvnrlfzectovhfswyphjt"
 
 a note reminding us to wrap the flag in "byuctf{}"
 
-and  a "encrypt.py" file
+and an "encrypt.py" file
 
 ================================================================================
 
@@ -15,13 +29,15 @@ first impressions:
 thought the name might imply something - but i think its just the author's name
 
 the encryption function is as follows:
-
+<o>--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 		def encrypt(plaintext, key):
 			plaintext += "x"*((12-len(plaintext)%12)%12)
 			blocks = [plaintext[12*i:12*(i+1)] for i in range(0,len(plaintext)//12)]
 			keyNums = [ord(key[i])-97 for i in range(len(key))]
 			resultLetters = ""
-			
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------</o>			
 lots of clipping the encryption into 12 length pieces, maybe some sort of block cipher?
 	- can confirm some sort of block cipher, the following code padds the input pt to be ≅ 0 mod(12)
 		- plaintext += "x"*((12-len(plaintext)%12)%12)
@@ -31,7 +47,8 @@ then it splits the padded plaintext into 12 length blocks
 the next piece turns each character of the key into a number, from 0 to 25, where [a = 0] and [z = 25]
 
 interestingly, the key gen function cannot generate a key with the letter "z":
-
+<o>--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 		def getRandomKey():
 			letters = "abcdefghijklmnopqrstuvwxy"
 			key = choice(letters)
@@ -45,7 +62,8 @@ interestingly, the key gen function cannot generate a key with the letter "z":
 					newletterNum = ord(newletter)-97
 				key+=newletter
 			return key
-			
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------</o>			
 I suspect this is in order to map well onto a 5x5 matrix, of which there are 5 of the following format:
 
 		A = np.array([[1, 7, 13, 19, 25, 31],
@@ -300,7 +318,7 @@ the functions that stay the same;
 	- building the blocks
 	
 combining all this we get:
---------------------------------------------------------------------------------
+<o>--------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
 			import numpy as np
@@ -416,7 +434,7 @@ combining all this we get:
 				print(decrypt(ciphertext, key))
 				
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------				
+--------------------------------------------------------------------------------</o>				
 
 when we run this we get:
 
@@ -428,3 +446,6 @@ wrapping the flag we get:
 that one was tricker than I thought, my coding skills need a little work
 
 CWW
+<bl>┌──┐
+<a href="index.html">HOME</a>
+└──┘</bl>
