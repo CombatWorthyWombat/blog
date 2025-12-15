@@ -17,11 +17,11 @@ pre {
 }
 /* close to the gruvbox format */
 w { color: white; }
-re { color: #FB4934; } /* red */
-gr { color: #B8BB26; } /* green */
-ye { color: #FABD2F; } /* yellow */
-bl { color: #83A598; } /* blue - cant use b as breaks html alignment*/
-pu { color: #D3869B; } /* purple - cant use p as creates new paragraph*/
-az { color: #8EC07C; text-decoration: none; } /* turquiose - use for links */
-or { color: #FE8019; } /* orange */
+r { color: #FB4934; } /* red */
+g { color: #B8BB26; } /* green */
+y { color: #FABD2F; } /* yellow */
+d { color: #83A598; } /* blue - cant use b as breaks html alignment*/
+k { color: #D3869B; } /* purple - cant use p as creates new paragraph*/
+a { color: #8EC07C; text-decoration: none; } /* turquiose - use for links */
+o { color: #FE8019; } /* orange */
 f { color: #EBDBB2; } /* muted white */
