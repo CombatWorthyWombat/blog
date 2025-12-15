@@ -23,11 +23,12 @@ y { color: #FABD2F; } /* yellow */
 bl { color: #83A598; } /* blue - cant use b as breaks html alignment*/
 pu { color: #D3869B; } /* purple - cant use p as creates new paragraph*/
 
-a { color: #83A598; text-decoration: none; }
-a:visited { color: #83A598; text-decoration: none; }
-a:hover { color: #B8BB26; text-decoration: none; }
-a:active { color: #83A598; text-decoration: none; }
+a,
+a:visited,
+a:active,
 a:focus { color: #83A598; text-decoration: none; } /* turquiose - use for links */
+
+a:hover { color: #B8BB26; text-decoration: none; }
 
 o { color: #FE8019; } /* orange */
 f { color: #EBDBB2; } /* muted white */
