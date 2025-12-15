@@ -22,10 +22,12 @@ g { color: #B8BB26; } /* green */
 y { color: #FABD2F; } /* yellow */
 bl { color: #83A598; } /* blue - cant use b as breaks html alignment*/
 pu { color: #D3869B; } /* purple - cant use p as creates new paragraph*/
-a,
-a:visited,
+
+a { color: #83A598; text-decoration: none; }
+a:visited { color: #83A598; text-decoration: none; }
 a:hover { color: #B8BB26; text-decoration: none; }
-a:active,
+a:active { color: #83A598; text-decoration: none; }
 a:focus { color: #83A598; text-decoration: none; } /* turquiose - use for links */
+
 o { color: #FE8019; } /* orange */
 f { color: #EBDBB2; } /* muted white */
