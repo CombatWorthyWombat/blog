@@ -10,13 +10,13 @@
 <a href="index.html">BACK</a>
 <bl>┗━━┛</bl>
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║ Contents - 17-12-2025 committing crimes against readable assembly                ║
+║ <bl>Contents - 17-12-2025 committing crimes against readable assembly</bl>                ║
 ║ -------------------------------------------------------------------------------- ║
-║ yara rules and bytecodes                                                         ║
-║ shellcode as accidental obfuscation                                              ║
-║ expanding maths equations as obfuscation                                         ║
-║ individual instruction obfuscation                                               ║
-║ issues and further stuff to do                                                   ║
+║ <y>yara rules and bytecodes</y>                                                         ║
+║ <y>shellcode as accidental obfuscation</y>                                              ║
+║ <y>expanding maths equations as obfuscation</y>                                         ║
+║ <y>individual instruction obfuscation</y>                                               ║
+║ <y>issues and further stuff to do</y>                                                   ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I was as at a conference about malware recently, and someone did a talk on yara  ║
@@ -25,9 +25,9 @@
 ║ For those of you (like myself) who had no idea what yara was - here is a brief   ║
 ║ explanation:                                                                     ║
 ║                                                                                  ║
-║  ~ a language/tool for pattern matching                                          ║
-║  ~ a rule contains 3 parts: [metadata] [strings-to-match] [condition]            ║
-║  ~ generally used for identifying/classifying malware samples                    ║
+║  <f1>-></f1> a language/tool for pattern matching                                         ║
+║  <f1>-></f1> a rule contains 3 parts: [metadata] [strings-to-match] [condition]           ║
+║  <f1>-></f1> generally used for identifying/classifying malware samples                   ║
 ║                                                                                  ║
 ║ In theory you could create this functionality in whatever language you prefer    ║
 ║ but people seem to like the way these rules are structured                       ║
@@ -35,20 +35,20 @@
 ║ As an example, this is one from <a href="https://github.com/Yara-Rules">here</a>:                                            ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ <o>}</o>                                                                                ║
+║ <f>}</f>                                                                                ║
 ║                                                                                  ║
-║ <o>rule prime_constants_char {</o>                                                      ║
-║     <o>meta:</o>                                                                        ║
-║         <o>author = "_pusher_"</o>                                                      ║
-║         <o>description = "list of primes [char]"</o>                                    ║
-║         <o>date = "2016-07"</o>                                                         ║
-║     <o>strings:</o>                                                                     ║
-║         <o>$c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f</o>   ║
-║         <o>53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7</o>  ║
-║         <o>d3 df e3 e5 e9 ef f1 fb }</o>                                                ║
-║     <o>condition:</o>                                                                   ║
-║         <o>$c0</o>                                                                      ║
-║ <o>}</o>                                                                                ║
+║ <g>rule prime_constants_char</g> <f>{</f>                                                      ║
+║     <y>meta:</y>                                                                        ║
+║         <pu>author</pu> <f>= "_pusher_"</f>                                                      ║
+║         <pu>description</pu> <f>= "list of primes [char]"</f>                                    ║
+║         <pu>date</pu> <f>= "2016-07"</f>                                                         ║
+║     <y>strings:</y>                                                                     ║
+║         <pu>$c0</pu> <f>= {</f> <bl>03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f</bl>   ║
+║         <bl>53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7</bl>  ║
+║         <bl>d3 df e3 e5 e9 ef f1 fb</bl> <f>}</f>                                                ║
+║     <y>condition:</y>                                                                   ║
+║         <pu>$c0</pu>                                                                      ║
+║ <f>}</f>                                                                                ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ The above is a list of primes that a piece of malware may use for various crypto ║
@@ -66,13 +66,13 @@
 ║ some malware analysed by Miracl                                                  ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ <o>$c0 = { 51 56 57 e8 ?? ?? ?? ?? 8b 74 24 10 8b f8 89 7c 24 08 83 7e 0c 02 0f 8c</o>  ║
-║  <o>99 01 00 00 8b 87 18 02 00 00 85 c0 0f 85 8b 01 00 00 8b 57 1c 42 8b c2 89 57</o>   ║
-║  <o>1c 83 f8 18 7d 17 c7 44 87 20 4a 00 00 00 8b 87 2c 02 00 00 85 c0 74 05 e8 ??</o>   ║
-║  <o>?? ?? ?? 8b 46 04 8b 54 24 14 53 55 8b 08 8b 02 51 50 e8 ?? ?? ?? ?? 8b 4e 0c</o>   ║
-║  <o>b8 01 00 00 00 83 c4 08 33 ed 3b c8 89 44 24 18 0f 8e c5 00 00 00 bf 04 00 00</o>   ║
-║  <o>00 8b 46 04 8b 0c 07 8b 10 8b 44 24 1c 51 52 8b 0c 07 51 e8 ?? ?? ?? ?? 8b 56</o>   ║
-║  <o>04 8b 4e 08 8b 04 }</o>                                                             ║
+║ <pu>$c0</pu> <f>= {</f> <bl>51 56 57 e8 ?? ?? ?? ?? 8b 74 24 10 8b f8 89 7c 24 08 83 7e 0c 02 0f 8c</bl>  ║
+║  <bl>99 01 00 00 8b 87 18 02 00 00 85 c0 0f 85 8b 01 00 00 8b 57 1c 42 8b c2 89 57</bl>   ║
+║  <bl>1c 83 f8 18 7d 17 c7 44 87 20 4a 00 00 00 8b 87 2c 02 00 00 85 c0 74 05 e8 ??</bl>   ║
+║  <bl>?? ?? ?? 8b 46 04 8b 54 24 14 53 55 8b 08 8b 02 51 50 e8 ?? ?? ?? ?? 8b 4e 0c</bl>   ║
+║  <bl>b8 01 00 00 00 83 c4 08 33 ed 3b c8 89 44 24 18 0f 8e c5 00 00 00 bf 04 00 00</bl>   ║
+║  <bl>00 8b 46 04 8b 0c 07 8b 10 8b 44 24 1c 51 52 8b 0c 07 51 e8 ?? ?? ?? ?? 8b 56</bl>   ║
+║  <bl>04 8b 4e 08 8b 04</bl> <f>}</f>                                                             ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Our issue here is that this isn't just data we can scramble as we please, we     ║
@@ -94,16 +94,16 @@
 ║ Most shellcodes might look something like this in assembly:                      ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ .global _start                                                                   ║
-║ _start:                                                                          ║
-║ .intel_syntax noprefix                                                           ║
-║         mov rax, 0x59                  # 59 = syscall for execve                 ║
-║         lea rdi, [rip+binsh]           # load pointer to bin/sh                  ║
-║         mov rsi, 0x00                  # sets second arg to null                 ║
-║         mov rdx, 0x00                  # sets third arg as 0                     ║
-║         syscall                        # invoke execve                           ║
-║ binsh:                                                                           ║
-║         .string "/bin/sh"                                                        ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>_start:</y>                                                                          ║
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║         <f><pu>mov</pu> <g>rax</g>, <bl>0x59</bl></f>                  <f1># 59 = syscall for execve</f1>                 ║
+║         <f><pu>lea</pu> <g>rdi</g>, [<g>rip</g>+<y>binsh</y>]</f>           <f1># load pointer to bin/sh</f1>                  ║
+║         <f><pu>mov</pu> <g>rsi</g>, <bl>0x00</bl></f>                  <f1># sets second arg to null</f1>                 ║
+║         <f><pu>mov</pu> <g>rdx</g>, <bl>0x00</bl></f>                  <f1># sets third arg as 0</f1>                     ║
+║         <f><pu>syscall</pu></f>                        <f1># invoke execve</f1>                           ║
+║ <y>binsh:</y>                                                                           ║
+║         <f>.string "/bin/sh"</f>                                                        ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Even without looking at the bytecode, we can see that there will be "<r>0x00</r>" bytes ║
@@ -111,40 +111,40 @@
 ║                                                                                  ║
 ║ (hexdump of an executable when compiled from the above assembly)                 ║
 ╠══------------------------------------------------------------------------------══╣
-║ <o>00000000  48 c7 c0 3b <r>00</r> <r>00</r> <r>00</r> 48  8d 3d 08 <r>00</r> <r>00</r> <r>00</r> 48 31  |H..;...H.=....H1|   ║
-║ 00000010  f6 48 31 d2 0f 05 2f 62  69 6e 2f 73 68 <r>00</r>        |.H1.../bin/sh.|</o>     ║
+║ <f1>00000000</f1>  <bl>48 c7 c0 3b <r>00</r> <r>00</r> <r>00</r> 48  8d 3d 08 <r>00</r> <r>00</r> <r>00</r> 48 31</bl>  <f1>|H..;...H.=....H1|</f1>   ║
+║ <f1>00000010</f1>  <bl>f6 48 31 d2 0f 05 2f 62  69 6e 2f 73 68 <r>00</r></bl>        <f1>|.H1.../bin/sh.|</f1>     ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ After a while of tinkering I ended up with the following assembly:               ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ .global _start                                                                   ║
-║ _start:                                                                          ║
-║ .intel_syntax noprefix                                                           ║
-║         xor rax, rax                                                             ║
-║         mov al, 59                     # 59 = syscall for execve                 ║
-║         mov byte ptr [rsp+0], 0x2f     # "/bin/sh" byte by byte                  ║
-║         mov byte ptr [rsp+1], 0x62                                               ║
-║         mov byte ptr [rsp+2], 0x69                                               ║
-║         mov byte ptr [rsp+3], 0x6e                                               ║
-║         mov byte ptr [rsp+4], 0x2f                                               ║
-║         mov byte ptr [rsp+5], 0x73                                               ║
-║         mov byte ptr [rsp+6], 0x68                                               ║
-║         xor cl, cl                                                               ║
-║         mov byte ptr [rsp+7], cl                                                 ║
-║         mov rdi, rsp                                                             ║
-║         xor rsi, rsi                   # sets second arg to null                 ║
-║         xor rdx, rdx                   # sets third arg as 0                     ║
-║         syscall                        # invoke execve                           ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>_start:</y>                                                                          ║
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║         <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                             ║
+║         <f><pu>mov</pu> <g>al</g>, <bl>59</bl></f>                     <f1># 59 = syscall for execve</f1>                 ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>0</bl>], <bl>0x2f</bl></f>     <f1># "/bin/sh" byte by byte</f1>                  ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>1</bl>], <bl>0x62</bl></f>                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>2</bl>], <bl>0x69</bl></f>                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>3</bl>], <bl>0x6e</bl></f>                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>4</bl>], <bl>0x2f</bl></f>                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>5</bl>], <bl>0x73</bl></f>                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>6</bl>], <bl>0x68</bl></f>                                               ║
+║         <f><pu>xor</pu> <g>cl</g>, <g>cl</g></f>                                                               ║
+║         <f><pu>mov</pu> byte ptr [<g>rsp</g>+<bl>7</bl>], <g>cl</g></f>                                                 ║
+║         <f><pu>mov</pu> <g>rdi</g>, <g>rsp</g></f>                                                             ║
+║         <f><pu>xor</pu> <g>rsi</g>, <g>rsi</g></f>                   <f1># sets second arg to null</f1>                 ║
+║         <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                   <f1># sets third arg as 0</f1>                     ║
+║         <f><pu>syscall</pu></f>                        <f1># invoke execve</f1>                           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Which yielded the following "<r>0x00</r>" free bytecode:                                ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ <o>00000000  48 31 c0 b0 3b c6 04 24  2f c6 44 24 01 62 c6 44  |H1..;..$/.D$.b.D|</o>   ║
-║ <o>00000010  24 02 69 c6 44 24 03 6e  c6 44 24 04 2f c6 44 24  |$.i.D$.n.D$./.D$|</o>   ║
-║ <o>00000020  05 73 c6 44 24 06 68 30  c9 88 4c 24 07 48 89 e7  |.s.D$.h0..L$.H..|</o>   ║
-║ <o>00000030  48 31 f6 48 31 d2 0f 05                           |H1.H1...|</o>           ║
+║ <f1>00000000  <bl>48 31 c0 b0 3b c6 04 24  2f c6 44 24 01 62 c6 44</bl>  |H1..;..$/.D$.b.D|</f1>   ║
+║ <f1>00000010  <bl>24 02 69 c6 44 24 03 6e  c6 44 24 04 2f c6 44 24</bl>  |$.i.D$.n.D$./.D$|</f1>   ║
+║ <f1>00000020  <bl>05 73 c6 44 24 06 68 30  c9 88 4c 24 07 48 89 e7</bl>  |.s.D$.h0..L$.H..|</f1>   ║
+║ <f1>00000030  <bl>48 31 f6 48 31 d2 0f 05</bl>                           |H1.H1...|</f1>           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ What exactly I did isn't important necessarily - but in the process of changing  ║
@@ -153,82 +153,82 @@
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
-║ Later on I came across <a href="https://phrack.org/issues/71/15_md#article">this article</a> in Prack 71, where the author (Ege BALCI)    ║
+║ Later on I came across <a href="https://phrack.org/issues/71/15_md#article">this article</a> in Prack 71, where the author <f1>(Ege BALCI)</f1>    ║
 ║ uses a bunch of tricks to transform assembly instructions into obfuscated blocks ║
 ║                                                                                  ║
 ║ The moment it sort of clicked for me was in comparing assembly instructions to   ║
 ║ maths operations:                                                                ║
 ║                                                                                  ║
-║ (from the article):                                                              ║
+║ <f1>(from the article):</f1>                                                              ║
 ╠══------------------------------------------------------------------------------══╣
-║ mov, push, pop, lea ---> =                                                       ║
-║       cmp, sub, sbb ---> -                                                       ║
-║            add, adc ---> +                                                       ║
-║           imul, mul ---> *                                                       ║
-║           idiv, div ---> /                                                       ║
-║           test, and ---> &                                                       ║
-║                  or ---> |                                                       ║
-║                 xor ---> ^                                                       ║
-║                 shl ---> <<                                                      ║
-║                 shr ---> >>                                                      ║
-║                 not ---> '                                                       ║
+║ <f><pu>mov</pu>, <pu>push</pu>, <pu>pop</pu>, <pu>lea</pu> <f1>-></f1> <r>=</r></f>                                                         ║
+║       <f><pu>cmp</pu>, <pu>sub</pu>, <pu>sbb</pu> <f1>-></f1> -</f>                                                         ║
+║            <f><pu>add</pu>, <pu>adc</pu> <f1>-></f1> <r>+</r></f>                                                         ║
+║           <f><pu>imul</pu>, <pu>mul</pu> <f1>-></f1> <r>*</r></f>                                                         ║
+║           <f><pu>idiv</pu>, <pu>div</pu> <f1>-></f1> <r>/</r></f>                                                         ║
+║           <f><pu>test</pu>, <pu>and</pu> <f1>-></f1> <r>&</r></f>                                                         ║
+║                  <f><pu>or</pu> <f1>-> <r>|</r></f>                                                         ║
+║                 <f><pu>xor</pu> <f1>-> <r>||</r></f>                                                        ║
+║                 <f><pu>shl</pu> <f1>-> <r><<</r></f>                                                        ║
+║                 <f><pu>shr</pu> <f1>-> <r>>></r></f>                                                        ║
+║                 <f><pu>not</pu> <f1>-> <r>'</r></f>                                                         ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Using this, we can sort of map assembly onto equations, as an example the        ║
-║ following code block is given (where [eax = x], [ebx = y]):                      ║
+║ following code block is given (where [<g>eax</g> = x], [<g>ebx</g> = y]):                      ║
 ║                                                                                  ║
-║ (from the article)                                                               ║
+║ <f1>(from the article)</f1>                                                               ║
 ╠══------------------------------------------------------------------------------══╣
-║         mov ecx, 0x8    ) -------------> z = 8       )                           ║
-║         shl eax, 0x2    ) -------------> 4x          )                           ║
-║         shl ebx, 0x1    ) -------------> 2y          ) ---> ((4x+2y+8)**2)       ║
-║         add eax, ebx    ) -------------> 4x+2y       )                           ║
-║         add eax, ecx    ) -------------> 4x+2y+8     )                           ║
-║         imul eax, eax   ) -------------> (4x+2y+8)^2 )                           ║
+║         <f><pu>mov</pu> <g>ecx</g>, <bl>0x8</bl>    <f1>) -------------></f1> <bl>z = 8</bl>       <f1>)</f1></f>                           ║
+║         <f><pu>shl</pu> <g>eax</g>, <bl>0x2</bl>    <f1>) -------------></f1> <bl>4x</bl>          <f1>)</f1></f>                           ║
+║         <f><pu>shl</pu> <g>ebx</g>, <bl>0x1</bl>    <f1>) -------------></f1> <bl>2y</bl>          <f1>) ---></f1> <bl>((4x+2y+8)**2)</bl></f>       ║
+║         <f><pu>add</pu> <g>eax</g>, <g>ebx</g>    <f1>) -------------></f1> <bl>4x+2y</bl>       <f1>)</f1></f>                           ║
+║         <f><pu>add</pu> <g>eax</g>, <g>ecx</g>    <f1>) -------------></f1> <bl>4x+2y+8</bl>     <f1>)</f1></f>                           ║
+║         <f><pu>imul</pu> <g>eax</g>, <g>eax</g>   <f1>) -------------></f1> <bl>(4x+2y+8)^2</bl> <f1>)</f1></f>                           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ If you were to expand:                                                           ║
-║ -> ((4x+2y+8)**2)                                                                ║
+║ <f1>-></f1> <bl>((4x+2y+8)**2)</bl>                                                                ║
 ║                                                                                  ║
 ║ You would get:                                                                   ║
-║ -> 16x^2 + 16xy + 64x + 4y^2 + 32y + 64                                          ║
+║ <f1>-></f1> <bl>16x^2 + 16xy + 64x + 4y^2 + 32y + 64</bl>                                          ║
 ║                                                                                  ║
-║ The article then goes on to say: "When this expression is transformed back into  ║
-║ assembly code, you'll see that multiple instructions are changed, new ones are   ║
-║ added, and some disappear. The only problem for us is that some instructions     ║
-║ stay exactly the same, which may still trigger detection."                       ║
+║ The article then goes on to say: <f>"When this expression is transformed back into</f>  ║
+║ <f>assembly code, you'll see that multiple instructions are changed, new ones are</f>   ║
+║ <f>added, and some disappear. The only problem for us is that some instructions</f>     ║
+║ <f>stay exactly the same, which may still trigger detection."</f>                       ║
 ║                                                                                  ║
 ║ No code is provided though to prove/assert this - so I decided to see if I could ║
 ║ try and create a representation of the expanded equation in assembly. It is      ║
-║ quite messy, but does result in the desired value in eax. (and, after all, isn't ║
+║ quite messy, but does result in the desired value in <g>eax</g>. (and, after all, isn't ║
 ║ messy what we are after with obfuscation?)                                       ║
 ║                                                                                  ║
-║ For this one: [r10 = x] [r1 = y]                                                 ║
+║ For this one: <f>[<g>r10</g> = <bl>x</bl>] [<g>r11</g> = <bl>y</bl>]</f>                                                ║
 ╠══------------------------------------------------------------------------------══╣
-║         shl r10, 0x02                  # r10 = "4x"                              ║
-║         mov ebx, r10                                                             ║
-║         imul ebx, ebx                                                            ║
-║         mov edx, ebx                   # add "16x**2"                            ║
-║         xor ebx, ebx                   # clear                                   ║
-║         shl r11, 0x02                  # r11 = "4y"                              ║
-║         mov ebx, r1                                                              ║
-║         imul ebx, r11                  # add "16xy"                              ║
-║         add edx, ebx                                                             ║
-║         xor ebx, ebx                   # clear                                   ║
-║         shl r10, 0x04                  # r10 = "64x"                             ║
-║         add edx, r10                   # add "64x"                               ║
-║         shr r11, 0x1                   # r11 = "2y"                              ║
-║         mov ebx, r11                                                             ║
-║         imul ebx, ebx                                                            ║
-║         add edx, ebx                   # add "4y**2"                             ║
-║         xor ebx, ebx                   # clear                                   ║
-║         shl r11, 0x04                  # r11 = "32y"                             ║
-║         add edx, r11                   # add "32y"                               ║
-║         add edx, 0x40                  # add 64                                  ║
+║         <f><pu>shl</pu>  <g>r10</g>, <bl>0x02</bl></f>                 <f1># r10 = "4x"</f1>                              ║
+║         <f><pu>mov</pu>  <g>ebx</g>, <g>r10</g></f>                                                            ║
+║         <f><pu>imul</pu> <g>ebx</g>, <g>ebx</g></f>                                                            ║
+║         <f><pu>mov</pu>  <g>edx</g>, <g>ebx</g></f>                  <f1># add "16x**2"</f1>                            ║
+║         <f><pu>xor</pu>  <g>ebx</g>, <g>ebx</g></f>                  <f1># clear</f1>                                   ║
+║         <f><pu>shl</pu>  <g>r11</g>, <bl>0x02</bl></f>                 <f1># r11 = "4y"</f1>                              ║
+║         <f><pu>mov</pu>  <g>ebx</g>, <g>r11</g></f>                                                            ║
+║         <f><pu>imul</pu> <g>ebx</g>, <g>r11</g></f>                  <f1># add "16xy"</f1>                              ║
+║         <f><pu>add</pu>  <g>edx</g>, <g>ebx</g></f>                                                            ║
+║         <f><pu>xor</pu>  <g>ebx</g>, <g>ebx</g></f>                  <f1># clear</f1>                                   ║
+║         <f><pu>shl</pu>  <g>r10</g>, <bl>0x04</bl></f>                 <f1># r10 = "64x"</f1>                             ║
+║         <f><pu>add</pu>  <g>edx</g>, <g>r10</g></f>                  <f1># add "64x"</f1>                               ║
+║         <f><pu>shr</pu>  <g>r11</g>, <bl>0x1</bl></f>                  <f1># r11 = "2y"</f1>                              ║
+║         <f><pu>mov</pu>  <g>ebx</g>, <g>r11</g></f>                                                            ║
+║         <f><pu>imul</pu> <g>ebx</g>, <g>ebx</g></f>                                                            ║
+║         <f><pu>add</pu>  <g>edx</g>, <g>ebx</g></f>                  <f1># add "4y**2"</f1>                             ║
+║         <f><pu>xor</pu>  <g>ebx</g>, <g>ebx</g></f>                  <f1># clear</f1>                                   ║
+║         <f><pu>shl</pu>  <g>r11</g>, <bl>0x04</bl></f>                 <f1># r11 = "32y"</f1>                             ║
+║         <f><pu>add</pu>  <g>edx</g>, <g>r11</g></f>                  <f1># add "32y"</f1>                               ║
+║         <f><pu>add</pu>  <g>edx</g>, <bl>0x40</bl></f>                 <f1># add 64</f1>                                  ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ As for the claim that "some instructions stay exactly the same", most are        ║
-║ quite different. Perhaps the [shr] and [shl] instructions betray the core        ║
+║ As for the claim that <f>"some instructions stay exactly the same"</f>, most are        ║
+║ quite different. Perhaps the <pu>shr</pu> and <pu>shl</pu> instructions betray the core        ║
 ║ functionality of the code in a way that can still be picked up by yara rules?    ║
 ║                                                                                  ║
 ║ However, I am not in the business of doubting people much more knowledgeable     ║
@@ -241,173 +241,174 @@
 ║ assembly instructions, rather than blocks of instructions. Take our little       ║
 ║ heuristic trick from earlier; equating instructions to maths:                    ║
 ║                                                                                  ║
-║ If we take the add instruction to be equivalent to "+"                           ║
+║ If we take the <pu>add</pu> instruction to be equivalent to "<r>+</r>"                           ║
 ║                                                                                  ║
-║         add eax, 0x10                                                            ║
+║         <pu>add</pu> <g>eax</g>, <bl>0x10</bl>                                                            ║
 ║                                                                                  ║
 ║ This can be rephrased as:                                                        ║
 ║                                                                                  ║
-║         x + 16                                                                   ║
+║         <g>x</g><bl> + 16</bl>                                                                   ║
 ║                                                                                  ║
 ║ As with all additions, this can be expanded to:                                  ║
 ║                                                                                  ║
-║         x - y - 10 + 2 + 21 + 3 + y                                              ║
+║         <g>x</g><bl> - y - 10 + 2 + 21 + 3 + y</bl>                                              ║
 ║                                                                                  ║
 ║ The original instruction can be expanded to:                                     ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║         sub eax, y                                                               ║
-║         sub eax, 0xa                                                             ║
-║         add eax, 0x2                                                             ║
-║         add eax, 0xa5                                                            ║
-║         add eax, 0x3                                                             ║
-║         add eax, y                                                               ║
+║         <f><pu>sub</pu> <g>eax</g>, <bl>y</bl></f>                                                               ║
+║         <f><pu>sub</pu> <g>eax</g>, <bl>0xa</bl></f>                                                             ║
+║         <f><pu>add</pu> <g>eax</g>, <bl>0x2</bl></f>                                                             ║
+║         <f><pu>add</pu> <g>eax</g>, <bl>0xa5</bl></f>                                                            ║
+║         <f><pu>add</pu> <g>eax</g>, <bl>0x3</bl></f>                                                             ║
+║         <f><pu>add</pu> <g>eax</g>, <bl>y</bl></f>                                                               ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ There are other instructions that can be approximated to "+" aswell:             ║
-║                                                                                  ║
-║         add                                                                      ║
-║         adc                                                                      ║
-║         sub                            # add - x                                 ║
-║         sbb                                                                      ║
-║         inc                            # add 1                                   ║
-║         dec                            # add -1                                  ║
-║         cmp                            # sub but with flags                      ║
+║ There are other instructions that can be approximated to "<r>+</r>" aswell:             ║
+║                                                                                  ║                                                                                  ║
+║         <pu>add</pu>                                                                      ║
+║         <pu>adc</pu>                                                                      ║
+║         <pu>sub</pu>                            <f1># add - x</f1>                                 ║
+║         <pu>sbb</pu>                                                                      ║
+║         <pu>inc</pu>                            <f1># add 1</f1>                                   ║
+║         <pu>dec</pu>                            <f1># add -1</f1>                                  ║
+║         <pu>cmp</pu>                            <f1># sub but with flags</f1>                      ║
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ What about logical operators? - turns out we can do a similar thing:             ║
 ║                                                                                  ║
-║ If we take the xor instruction to be equivalent to "||"                          ║
+║ If we take the <pu>xor</pu> instruction to be equivalent to "<r>||</r>"                          ║
 ║                                                                                  ║
-║         xor eax, 0x10                                                            ║
+║         <pu>xor</pu> <g>eax</g>, <bl>0x10</bl>                                                            ║
 ║                                                                                  ║
 ║ Can be rephrased as:                                                             ║
 ║                                                                                  ║
-║         x || 16                                                                  ║
+║         <g>x</g> <bl>|| 16</bl>                                                                  ║
 ║                                                                                  ║
-║ The general case for XOR translation is <a href="https://mathcs.org/analysis/reals/logic/notation.html">(DeMorgan's laws)</a>:                       ║
+║ The general case for <pu>xor</pu> translation is <a href="https://mathcs.org/analysis/reals/logic/notation.html">(DeMorgan's laws)</a>:                       ║
 ║                                                                                  ║
-║         x || c = ('x & c) | (x & 'c)                                             ║
+║         <g>x</g> <bl>|| c = ('x & c) | (x & 'c)</bl>                                             ║
 ║                                                                                  ║
 ║ So we can translate our logical operation to:                                    ║
 ║                                                                                  ║
-║         x || 0x10 = ('x & 0x10) | (x & '0x10)                                    ║
+║         <g>x</g> <bl>|| 0x10 = ('x & 0x10) | (x & '0x10)</bl>                                    ║
 ║                                                                                  ║
-║ Where  | = bitwise or                                                            ║
-║        ' = bitwise not                                                           ║
-║        & = bitwise and                                                           ║
-║       || = bitwise xor                                                           ║
+║ Where  <r>|</r> = bitwise <pu>or</pu>                                                            ║
+║        <r>'</r> = bitwise <pu>not</pu>                                                           ║
+║        <r>&</r> = bitwise <pu>and</pu>                                                           ║
+║       <r>||</r> = bitwise <pu>xor</pu>                                                           ║
 ║                                                                                  ║
 ║ This could look something like:                                                  ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║         mov r1, eax                                                              ║
-║         not r1                                                                   ║
-║         and r1, 0x10                                                             ║
-║         mov r2, 0x10                                                             ║
-║         not r2                                                                   ║
-║         and r2, eax                                                              ║
-║         or r1, r2                                                                ║
-║         mov eax, r1                    # store result in eax                     ║
+║         <pu>mov</pu> <g>r10</g>, <g>eax</g>                                                             ║
+║         <pu>not</pu> <g>r10</g>                                                                  ║
+║         <pu>and</pu> <g>r10</g>, <bl>0x10</bl>                                                            ║
+║         <pu>mov</pu> <g>r11</g>, <bl>0x10</bl>                                                            ║
+║         <pu>not</pu> <g>r11</g>                                                                  ║
+║         <pu>and</pu> <g>r11</g>, <g>eax</g>                                                             ║
+║         <pu>or</pu>  <g>r10</g>, <g>r11</g>                                                             ║
+║         <pu>mov</pu> <g>eax</g>, <g>r10</g>                   <f1># store result in eax</f1>                     ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Other logical instructions that have translations include:                       ║
 ║                                                                                  ║
-║         or                             # x or,  y -> not((not x) and (not y))    ║
-║         and                            # x and, y -> not((not x) or (not y))     ║
-║         not                            # not x -> x xor 1                        ║
-║         test                           # same as and - but with flags            ║
+║         <pu>or</pu>   <g>x</g>, <g>y</g>                       <f1># -> not((not x) and (not y))</f1>            ║
+║         <pu>and</pu>  <g>x</g>, <g>y</g>                       <f1># -> not((not x) or (not y))</f1>             ║
+║         <pu>not</pu>  <g>x</g>                          <f1># -> x xor 1</f1>                             ║
+║         <pu>test</pu> <g>x</g>, <g>y</g>                       <f1># same as "and" - but with flags</f1>         ║
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I'm sure you can see the pattern here, next are the bitwise shift operators:     ║
 ║                                                                                  ║
-║ shl and shr are used (by me) as shorthands for multiplying and dividing by       ║
+║ <pu>shl</pu> and <pu>shr</pu> are used (by me) as shorthands for multiplying and dividing by       ║
 ║ powers of 2, or for moving bytes around from high to low                         ║
 ║                                                                                  ║
-║ So, if we take shl to be equivalent to "<<"                                      ║
+║ So, if we take <pu>shl</pu> to be equivalent to "<r><<</r>"                                      ║
 ║                                                                                  ║
-║         shl eax, 0x5                                                             ║
+║         <pu>shl</pu> <g>eax</g>, 0x5                                                             ║
 ║                                                                                  ║
 ║ Can be rephrased as:                                                             ║
 ║                                                                                  ║
-║         x << 5                                                                   ║
+║         <g>x</g> <bl><< 5</bl>                                                                   ║
 ║                                                                                  ║
 ║ As long as our shifts total 5, we can step through piecemeal:                    ║
 ║                                                                                  ║
-║         x << 2                                                                   ║
-║         x << 3                                                                   ║
+║         <g>x</g> <bl><< 2</bl>                                                                   ║
+║         <g>x</g> <bl><< 3</bl>                                                                   ║
 ║                                                                                  ║
-║ we can't shift greater than 5 - as we could lose some bits at the end. Say we    ║
+║ we can't shift greater than <bl>5</bl> - as we could lose some bits at the end. Say we    ║
 ║ have the following byte:                                                         ║
 ║                                                                                  ║
-║ -> [bin] 00000001 -> [dec] 1                                                     ║
+║ <f1>-></f1> [bin] 00000001 -> <bl>[dec] 1</bl>                                                     ║
 ║                                                                                  ║
-║ if we use the shl operation on this twice, we would get:                         ║
+║ if we use the <pu>shl</pu> operation on this twice, we would get:                         ║
 ║                                                                                  ║
-║ -> [bin] 00000100 -> [dec] 4                                                     ║
+║ <f1>-></f1> [bin] 00000100 -> <bl>[dec] 4</bl>                                                     ║
 ║                                                                                  ║
-║ But if we do a shr operation first - then our two shl operations, that rightmost ║
+║ But if we do a <pu>shr</pu> operation first - then our two <pu>shl</pu> operations, that rightmost ║
 ║ bit would get discarded as shift operations discard any bits pushed off the      ║
 ║ bottom of the byte                                                               ║
 ║                                                                                  ║
-║ The solution is to use the rol and ror instructions, which "roll" over the bits  ║
+║ The solution is to use the <pu>rol</pu> and <pu>ror</pu> instructions, which "roll" over the bits  ║
 ║ from the lowest to the highest places - preserving our bits. As a general rule   ║
 ║ we can translate shift operations in the following way:                          ║
 ║                                                                                  ║
-║         shl eax, 0x5                                                             ║
+║         <pu>shl</pu> <g>eax</g>, <bl>0x5</bl>                                                             ║
 ║                                                                                  ║
 ║ Which can be taken as:                                                           ║
 ║                                                                                  ║
-║         x >> 5                                                                   ║
+║         <g>x</g> <bl>>> 5</bl>                                                                   ║
 ║                                                                                  ║
-║ We need to know the size of our register, in our case eax is 32 bits. Then we    ║
-║ can choose a "target", which is 5 + n(32) where n = a random number              ║
+║ We need to know the size of our register, in our case <g>eax</g> is 32 bits. Then we    ║
+║ can choose a "target", which is <bl>5 + n(32)</bl> where <bl>n</bl> = a random number              ║
 ║                                                                                  ║
-║ Lets take rol and ror to be equivalent to "<<<" and ">>>" (I couldn't find any   ║
+║ Lets take <pu>rol</pu> and <pu>ror</pu> to be equivalent to "<<<" and ">>>" (I couldn't find any   ║
 ║ convention about what symbol to use for this - so "<<<" it is)                   ║
 ║                                                                                  ║
-║ For this example lets take our "target" to be = 37:                              ║
+║ For this example lets take our "target" to be = <bl>37</bl>:                              ║
 ║                                                                                  ║
-║         x >>> 100 >>> 1 <<< 64                                                   ║
+║         <g>x</g> <bl>>>> 100 >>> 1 <<< 64</bl>                                                   ║
 ║                                                                                  ║
 ║ Which could look something like:                                                 ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║         ror eax, 0x64                                                            ║
-║         ror eax, 0x1                                                             ║
-║         rol eax, 0x40                                                            ║
+║         <f><pu>ror</pu> <g>eax</g>, <bl>0x64</bl></f>                                                            ║
+║         <f><pu>ror</pu> <g>eax</g>, <bl>0x1</bl></f>                                                             ║
+║         <f><pu>rol</pu> <g>eax</g>, <bl>0x40</bl></f>                                                            ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I haven't quite worked out the equality ones, yet alone all the other super      ║
 ║ important assembly instructions present in most binaries. <a href="https://www.strchr.com/x86_machine_code_statistics">This</a> paper lists the   ║
-║ most commonly seen instructions in three popular opensource applications, I've   ║
-║ marked the ones I can scramble so far with "///":                                ║
+║ most commonly seen instructions in three popular opensource applications         ║
 ║                                                                                  ║
-║         mov                            # 35%                                     ║
-║         push                           # 10%                                     ║
-║         call                           # 6%                                      ║
-║         cmp                            # 5% ///                                  ║
-║         add                            # 4% ///                                  ║
-║         pop                            # 4%                                      ║
-║         lea                            # 4%                                      ║
-║         test                           # 3% ///                                  ║
-║         je                             # 3%                                      ║
-║         xor                            # 2% ///                                  ║
-║         jmp                            # 2%                                      ║
-║         jne                            # 2%                                      ║
-║         ret                            # 1%                                      ║
-║         inc                            # 1% ///                                  ║
-║         sub                            # 1% ///                                  ║
-║         fld                            # 1%                                      ║
-║         and                            # 1% ///                                  ║
-║         fstp                           # 1%                                      ║
-║         shl                            # 1% ///                                  ║
-║         or                             # 1% ///                                  ║
-║         others                         # 11%                                     ║
+║ I've marked the ones I can scramble so far with "<y><</y>":                             ║
+║                                                                                  ║
+║         <pu>mov</pu>                            <f1># 35%</f1>                                     ║
+║         <pu>push</pu>                           <f1># 10%</f1>                                     ║
+║         <pu>call</pu>                           <f1># 6%</f1>                                      ║
+║         <pu>cmp</pu>                            <f1># 5% <y><</y></f1>                                    ║
+║         <pu>add</pu>                            <f1># 4% <y><</y></f1>                                    ║
+║         <pu>pop</pu>                            <f1># 4%</f1>                                      ║
+║         <pu>lea</pu>                            <f1># 4%</f1>                                      ║
+║         <pu>test</pu>                           <f1># 3% <y><</y></f1>                                    ║
+║         <pu>je</pu>                             <f1># 3%</f1>                                      ║
+║         <pu>xor</pu>                            <f1># 2% <y><</y></f1>                                    ║
+║         <pu>jmp</pu>                            <f1># 2%</f1>                                      ║
+║         <pu>jne</pu>                            <f1># 2%</f1>                                      ║
+║         <pu>ret</pu>                            <f1># 1%</f1>                                      ║
+║         <pu>inc</pu>                            <f1># 1% <y><</y></f1>                                    ║
+║         <pu>sub</pu>                            <f1># 1% <y><</y></f1>                                    ║
+║         <pu>fld</pu>                            <f1># 1%</f1>                                      ║
+║         <pu>and</pu>                            <f1># 1% <y><</y></f1>                                    ║
+║         <pu>ftsp</pu>                           <f1># 1%</f1>                                      ║
+║         <pu>shl</pu>                            <f1># 1% <y><</y></f1>                                    ║
+║         <pu>or</pu>                             <f1># 1% <y><</y></f1>                                    ║
+║         <f>others</f>                         <f1># 11%</f1>                                     ║
 ║                                                                                  ║
 ║ Any load and loop instructions are going to be hard to represent as maths        ║
 ║ operators - though I have had some thoughts about how to obfuscate those parts   ║
@@ -421,14 +422,14 @@
 ║ As an aside, it has one hell of an abstract:                                     ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ It is well-known that the x86 instruction set is baroque, overcomplicated, and   ║
-║ redundantly redundant. We show just how much fluff it has by demonstrating that  ║
-║ it remains Turing-complete when reduced to just one instruction. The instruction ║
-║ we choose is mov, which can do both loads and stores. We use no unusual          ║
-║ addressing modes, self-modifying code, or runtime code generation. Using just    ║
-║ this instruction (and a single unconditional branch at the end of the program to ║
-║ make nontermination possible), we demonstrate how an arbitrary Turing machine    ║
-║ can be simulated.                                                                ║
+║ <f>It is well-known that the x86 instruction set is baroque, overcomplicated, and</f>   ║
+║ <f>redundantly redundant. We show just how much fluff it has by demonstrating that</f>  ║
+║ <f>it remains Turing-complete when reduced to just one instruction. The instruction</f> ║
+║ <f>we choose is mov, which can do both loads and stores. We use no unusual</f>          ║
+║ <f>addressing modes, self-modifying code, or runtime code generation. Using just</f>    ║
+║ <f>this instruction (and a single unconditional branch at the end of the program to</f> ║
+║ <f>make nontermination possible), we demonstrate how an arbitrary Turing machine</f>    ║
+║ <f>can be simulated.</f>                                                                ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Surely then, there must be a way of representing these troublesome               ║
@@ -437,9 +438,9 @@
 ║ engineer re-consider their life choices                                          ║
 ║                                                                                  ║
 ║ I think if I ever do manage to make an obfuscation compiler, it should only use  ║
-║ xor instructions, which gives me the opportunity to call it the "obfuscatXOR"    ║
+║ <pu>xor</pu> instructions, which gives me the opportunity to call it the "obfuscatXOR"    ║
 ║                                                                                  ║
-║ CWW                                                                              ║
+║ <r>CWW</r>                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 <bl>┏━━┓</bl>
 <a href="index.html">BACK</a>
