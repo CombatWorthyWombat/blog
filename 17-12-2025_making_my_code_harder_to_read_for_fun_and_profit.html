@@ -153,7 +153,7 @@
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
-║ Later on I came across this (link to phrack article) article in Prack 71, where  ║the author (Ege BALCI)
+║ Later on I came across <a href="https://phrack.org/issues/71/15_md#article">this article</a> in Prack 71, where the author (Ege BALCI) ║
 ║ uses a bunch of tricks to transform assembly instructions into obfuscated blocks ║
 ║                                                                                  ║
 ║ The moment it sort of clicked for me was in comparing assembly instructions to   ║
@@ -286,7 +286,7 @@
 ║                                                                                  ║
 ║         x || 16                                                                  ║
 ║                                                                                  ║
-║ The general case for XOR translation is (DeMorgan's laws) (link to DeMorgan's th ║eorem wiki):
+║ The general case for XOR translation is <a href="https://mathcs.org/analysis/reals/logic/notation.html">(DeMorgan's laws)</a>: ║
 ║                                                                                  ║
 ║         x || c = ('x & c) | (x & 'c)                                             ║
 ║                                                                                  ║
@@ -365,7 +365,7 @@
 ║ We need to know the size of our register, in our case eax is 32 bits. Then we    ║
 ║ can choose a "target", which is 5 + n(32) where n = a random number              ║
 ║                                                                                  ║
-║ Lets take rol and ror to be equivalent to "<<<" and ">>>" (i couldn't find any   ║
+║ Lets take rol and ror to be equivalent to "<<<" and ">>>" (I couldn't find any   ║
 ║ convention about what symbol to use for this - so "<<<" it is)                   ║
 ║                                                                                  ║
 ║ For this example lets take our "target" to be = 37:                              ║
@@ -383,7 +383,7 @@
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I haven't quite worked out the equality ones, yet alone all the other super      ║
-║ important assembly instructions present in most binaries. This (https://www.strc ║hr.com/x86_machine_code_statistics) paper lists the
+║ important assembly instructions present in most binaries. <a href="https://www.strchr.com/x86_machine_code_statistics">This</a> paper lists the ║
 ║ most commonly seen instructions in three popular opensource applications, I've   ║
 ║ marked the ones I can scramble so far with "///":                                ║
 ║                                                                                  ║
