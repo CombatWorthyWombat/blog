@@ -5,8 +5,11 @@
 </head>
 
 <body>
-<div style="display: inline-block; text-align: left;"><pre>   
- ══════════════════════════════════════════════════════════════════════════════════╗
+<div style="display: inline-block; text-align: left;"><pre>
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
+╔══════════════════════════════════════════════════════════════════════════════════╗
 ║ Contents                                                                         ║
 ║ ------------------------------                                                   ║
 ║ yara rules and bytecodes                                                         ║
@@ -22,9 +25,9 @@
 ║ For those of you (like myself) who had no idea what yara was - here is a brief   ║
 ║ explanation:                                                                     ║
 ║                                                                                  ║
-║ 	~ a language/tool for pattern matching                                         ║
-║ 	~ a rule contains 3 parts: [metadata] [strings-to-match] [condition]           ║
-║ 	~ generally used for identifying/classifying malware samples                   ║
+║  ~ a language/tool for pattern matching                                          ║
+║  ~ a rule contains 3 parts: [metadata] [strings-to-match] [condition]            ║
+║  ~ generally used for identifying/classifying malware samples                    ║
 ║                                                                                  ║
 ║ In theory you could create this functionality in whatever language you prefer    ║
 ║ but people seem to like the way these rules are structured                       ║
@@ -35,16 +38,16 @@
 ║ }                                                                                ║
 ║                                                                                  ║
 ║ rule prime_constants_char {                                                      ║
-║ 	meta:                                                                          ║
-║ 		author = "_pusher_"                                                        ║
-║ 		description = "list of primes [char]"                                      ║
-║ 		date = "2016-07"                                                           ║
-║ 	strings:                                                                       ║
-║ 		$c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f     ║
-║ 		53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7    ║
-║ 		d3 df e3 e5 e9 ef f1 fb }                                                  ║
-║ 	condition:                                                                     ║
-║ 		$c0                                                                        ║
+║     meta:                                                                        ║
+║         author = "_pusher_"                                                      ║
+║         description = "list of primes [char]"                                    ║
+║         date = "2016-07"                                                         ║
+║     strings:                                                                     ║
+║         $c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f   ║
+║         53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7  ║
+║         d3 df e3 e5 e9 ef f1 fb }                                                ║
+║     condition:                                                                   ║
+║         $c0                                                                      ║
 ║ }                                                                                ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
@@ -94,11 +97,11 @@
 ║ .global _start                                                                   ║
 ║ _start:                                                                          ║
 ║ .intel_syntax noprefix                                                           ║
-║         mov rax, 0x59                 	# 59 = syscall for execve              ║
-║         lea rdi, [rip+binsh]        	# load pointer to bin/sh                   ║
-║         mov rsi, 0x00                  	# sets second arg to null              ║
-║         mov rdx, 0x00                  	# sets third arg as 0                  ║
-║         syscall                     	# invoke execve                            ║
+║         mov rax, 0x59                  # 59 = syscall for execve                 ║
+║         lea rdi, [rip+binsh]           # load pointer to bin/sh                  ║
+║         mov rsi, 0x00                  # sets second arg to null                 ║
+║         mov rdx, 0x00                  # sets third arg as 0                     ║
+║         syscall                        # invoke execve                           ║
 ║ binsh:                                                                           ║
 ║         .string "/bin/sh"                                                        ║
 ╠══------------------------------------------------------------------------------══╣
@@ -118,21 +121,21 @@
 ║ .global _start                                                                   ║
 ║ _start:                                                                          ║
 ║ .intel_syntax noprefix                                                           ║
-║ 		xor rax, rax                                                               ║
-║ 		mov al, 59						# 59 = syscall for execve                  ║
-║ 		mov byte ptr [rsp+0], 0x2f		# "/bin/sh" byte by byte                   ║
-║ 		mov byte ptr [rsp+1], 0x62                                                 ║
-║ 		mov byte ptr [rsp+2], 0x69                                                 ║
-║ 		mov byte ptr [rsp+3], 0x6e                                                 ║
-║ 		mov byte ptr [rsp+4], 0x2f                                                 ║
-║ 		mov byte ptr [rsp+5], 0x73                                                 ║
-║ 		mov byte ptr [rsp+6], 0x68                                                 ║
-║ 		xor cl, cl                                                                 ║
-║ 		mov byte ptr [rsp+7], cl                                                   ║
-║ 		mov rdi, rsp                                                               ║
-║ 		xor rsi, rsi					# sets second arg to null                  ║
-║ 		xor rdx, rdx					# sets third arg as 0                      ║
-║ 		syscall							# invoke execve                            ║
+║         xor rax, rax                                                             ║
+║         mov al, 59                     # 59 = syscall for execve                 ║
+║         mov byte ptr [rsp+0], 0x2f     # "/bin/sh" byte by byte                  ║
+║         mov byte ptr [rsp+1], 0x62                                               ║
+║         mov byte ptr [rsp+2], 0x69                                               ║
+║         mov byte ptr [rsp+3], 0x6e                                               ║
+║         mov byte ptr [rsp+4], 0x2f                                               ║
+║         mov byte ptr [rsp+5], 0x73                                               ║
+║         mov byte ptr [rsp+6], 0x68                                               ║
+║         xor cl, cl                                                               ║
+║         mov byte ptr [rsp+7], cl                                                 ║
+║         mov rdi, rsp                                                             ║
+║         xor rsi, rsi                   # sets second arg to null                 ║
+║         xor rdx, rdx                   # sets third arg as 0                     ║
+║         syscall                        # invoke execve                           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Which yielded the following "0x00" free bytecode:                                ║
@@ -202,26 +205,26 @@
 ║                                                                                  ║
 ║ For this one: [r10 = x] [r1 = y]                                                 ║
 ╠══------------------------------------------------------------------------------══╣
-║ 		shl r10, 0x02 					# r10 = "4x"                               ║
-║ 		mov ebx, r10                                                               ║
-║ 		imul ebx, ebx                                                              ║
-║ 		mov edx, ebx 					# add "16x**2"                             ║
-║ 		xor ebx, ebx 					# clear                                    ║
-║ 		shl r11, 0x02 					# r11 = "4y"                               ║
-║ 		mov ebx, r1                                                                ║
-║ 		imul ebx, r11           		# add "16xy"                               ║
-║ 		add edx, ebx                                                               ║
-║ 		xor ebx, ebx 					# clear                                    ║
-║ 		shl r10, 0x04 					# r10 = "64x"                              ║
-║ 		add edx, r10 					# add "64x"                                ║
-║ 		shr r11, 0x1 					# r11 = "2y"                               ║
-║ 		mov ebx, r11                                                               ║
-║ 		imul ebx, ebx                                                              ║
-║ 		add edx, ebx 					# add "4y**2"                              ║
-║ 		xor ebx, ebx 					# clear                                    ║
-║ 		shl r11, 0x04 					# r11 = "32y"                              ║
-║ 		add edx, r11 					# add "32y"                                ║
-║ 		add edx, 0x40 					# add 64                                   ║
+║         shl r10, 0x02                  # r10 = "4x"                              ║
+║         mov ebx, r10                                                             ║
+║         imul ebx, ebx                                                            ║
+║         mov edx, ebx                   # add "16x**2"                            ║
+║         xor ebx, ebx                   # clear                                   ║
+║         shl r11, 0x02                  # r11 = "4y"                              ║
+║         mov ebx, r1                                                              ║
+║         imul ebx, r11                  # add "16xy"                              ║
+║         add edx, ebx                                                             ║
+║         xor ebx, ebx                   # clear                                   ║
+║         shl r10, 0x04                  # r10 = "64x"                             ║
+║         add edx, r10                   # add "64x"                               ║
+║         shr r11, 0x1                   # r11 = "2y"                              ║
+║         mov ebx, r11                                                             ║
+║         imul ebx, ebx                                                            ║
+║         add edx, ebx                   # add "4y**2"                             ║
+║         xor ebx, ebx                   # clear                                   ║
+║         shl r11, 0x04                  # r11 = "32y"                             ║
+║         add edx, r11                   # add "32y"                               ║
+║         add edx, 0x40                  # add 64                                  ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ As for the claim that "some instructions stay exactly the same", most are        ║
@@ -240,36 +243,36 @@
 ║                                                                                  ║
 ║ If we take the add instruction to be equivalent to "+"                           ║
 ║                                                                                  ║
-║ 		add eax, 0x10                                                              ║
-║ 		                                                                           ║
+║         add eax, 0x10                                                            ║
+║                                                                                  ║
 ║ This can be rephrased as:                                                        ║
 ║                                                                                  ║
-║ 		x + 16                                                                     ║
+║         x + 16                                                                   ║
 ║                                                                                  ║
 ║ As with all additions, this can be expanded to:                                  ║
 ║                                                                                  ║
-║ 		x - y - 10 + 2 + 21 + 3 + y                                                ║
-║ 		                                                                           ║
+║         x - y - 10 + 2 + 21 + 3 + y                                              ║
+║                                                                                  ║
 ║ The original instruction can be expanded to:                                     ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ 		sub eax, y                                                                 ║
-║ 		sub eax, 0xa                                                               ║
-║ 		add eax, 0x2                                                               ║
-║ 		add eax, 0xa5                                                              ║
-║ 		add eax, 0x3                                                               ║
-║ 		add eax, y                                                                 ║
+║         sub eax, y                                                               ║
+║         sub eax, 0xa                                                             ║
+║         add eax, 0x2                                                             ║
+║         add eax, 0xa5                                                            ║
+║         add eax, 0x3                                                             ║
+║         add eax, y                                                               ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ There are other instructions that can be approximated to "+" aswell:             ║
 ║                                                                                  ║
-║ 		add                                                                        ║
-║ 		adc                                                                        ║
-║ 		sub								# add - x                                  ║
-║ 		sbb                                                                        ║
-║ 		inc								# add 1                                    ║
-║ 		dec								# add -1                                   ║
-║ 		cmp								# sub but with flags                       ║
+║         add                                                                      ║
+║         adc                                                                      ║
+║         sub                            # add - x                                 ║
+║         sbb                                                                      ║
+║         inc                            # add 1                                   ║
+║         dec                            # add -1                                  ║
+║         cmp                            # sub but with flags                      ║
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
@@ -277,45 +280,45 @@
 ║                                                                                  ║
 ║ If we take the xor instruction to be equivalent to "||"                          ║
 ║                                                                                  ║
-║ 		xor eax, 0x10                                                              ║
-║ 		                                                                           ║
+║         xor eax, 0x10                                                            ║
+║                                                                                  ║
 ║ Can be rephrased as:                                                             ║
 ║                                                                                  ║
-║ 		x || 16                                                                    ║
-║ 		                                                                           ║
+║         x || 16                                                                  ║
+║                                                                                  ║
 ║ The general case for XOR translation is (DeMorgan's laws) (link to DeMorgan's th ║eorem wiki):
 ║                                                                                  ║
-║ 		x || c = ('x & c) | (x & 'c)                                               ║
-║ 	                                                                               ║
+║         x || c = ('x & c) | (x & 'c)                                             ║
+║                                                                                  ║
 ║ So we can translate our logical operation to:                                    ║
 ║                                                                                  ║
-║ 		x || 0x10 = ('x & 0x10) | (x & '0x10)                                      ║
-║ 		                                                                           ║
+║         x || 0x10 = ('x & 0x10) | (x & '0x10)                                    ║
+║                                                                                  ║
 ║ Where  | = bitwise or                                                            ║
-║ 	   ' = bitwise not                                                             ║
-║ 	   & = bitwise and                                                             ║
-║ 	  || = bitwise xor                                                             ║
-║ 	                                                                               ║
+║        ' = bitwise not                                                           ║
+║        & = bitwise and                                                           ║
+║       || = bitwise xor                                                           ║
+║                                                                                  ║
 ║ This could look something like:                                                  ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ 		mov r1, eax                                                                ║
-║ 		not r1                                                                     ║
-║ 		and r1, 0x10                                                               ║
-║ 		mov r2, 0x10                                                               ║
-║ 		not r2                                                                     ║
-║ 		and r2, eax                                                                ║
-║ 		or r1, r2                                                                  ║
-║ 		mov eax, r1						# store result in eax                      ║
+║         mov r1, eax                                                              ║
+║         not r1                                                                   ║
+║         and r1, 0x10                                                             ║
+║         mov r2, 0x10                                                             ║
+║         not r2                                                                   ║
+║         and r2, eax                                                              ║
+║         or r1, r2                                                                ║
+║         mov eax, r1                    # store result in eax                     ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Other logical instructions that have translations include:                       ║
 ║                                                                                  ║
-║ 		or 								# x or,  y -> not((not x) and (not y))     ║
-║ 		and								# x and, y -> not((not x) or (not y))      ║
-║ 		not								# not x -> x xor 1                         ║
-║ 		test							# same as and - but with flags             ║
-║ 	                                                                               ║
+║         or                             # x or,  y -> not((not x) and (not y))    ║
+║         and                            # x and, y -> not((not x) or (not y))     ║
+║         not                            # not x -> x xor 1                        ║
+║         test                           # same as and - but with flags            ║
+║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I'm sure you can see the pattern here, next are the bitwise shift operators:     ║
@@ -325,17 +328,17 @@
 ║                                                                                  ║
 ║ So, if we take shl to be equivalent to "<<"                                      ║
 ║                                                                                  ║
-║ 		shl eax, 0x5                                                               ║
-║ 	                                                                               ║
+║         shl eax, 0x5                                                             ║
+║                                                                                  ║
 ║ Can be rephrased as:                                                             ║
-║ 	                                                                               ║
-║ 		x << 5                                                                     ║
-║ 	                                                                               ║
+║                                                                                  ║
+║         x << 5                                                                   ║
+║                                                                                  ║
 ║ As long as our shifts total 5, we can step through piecemeal:                    ║
 ║                                                                                  ║
-║ 		x << 2                                                                     ║
-║ 		x << 3                                                                     ║
-║ 	                                                                               ║
+║         x << 2                                                                   ║
+║         x << 3                                                                   ║
+║                                                                                  ║
 ║ we can't shift greater than 5 - as we could lose some bits at the end. Say we    ║
 ║ have the following byte:                                                         ║
 ║                                                                                  ║
@@ -353,12 +356,12 @@
 ║ from the lowest to the highest places - preserving our bits. As a general rule   ║
 ║ we can translate shift operations in the following way:                          ║
 ║                                                                                  ║
-║ 		shl eax, 0x5                                                               ║
-║ 	                                                                               ║
+║         shl eax, 0x5                                                             ║
+║                                                                                  ║
 ║ Which can be taken as:                                                           ║
 ║                                                                                  ║
-║ 		x >> 5                                                                     ║
-║ 	                                                                               ║
+║         x >> 5                                                                   ║
+║                                                                                  ║
 ║ We need to know the size of our register, in our case eax is 32 bits. Then we    ║
 ║ can choose a "target", which is 5 + n(32) where n = a random number              ║
 ║                                                                                  ║
@@ -367,14 +370,14 @@
 ║                                                                                  ║
 ║ For this example lets take our "target" to be = 37:                              ║
 ║                                                                                  ║
-║ 		x >>> 100 >>> 1 <<< 64                                                     ║
+║         x >>> 100 >>> 1 <<< 64                                                   ║
 ║                                                                                  ║
 ║ Which could look something like:                                                 ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ 		ror eax, 0x64                                                              ║
-║ 		ror eax, 0x1                                                               ║
-║ 		rol eax, 0x40                                                              ║
+║         ror eax, 0x64                                                            ║
+║         ror eax, 0x1                                                             ║
+║         rol eax, 0x40                                                            ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
@@ -384,28 +387,28 @@
 ║ most commonly seen instructions in three popular opensource applications, I've   ║
 ║ marked the ones I can scramble so far with "///":                                ║
 ║                                                                                  ║
-║ 		mov								# 35%                                      ║
-║ 		push							# 10%                                      ║
-║ 		call							# 6%                                       ║
-║ 		cmp								# 5% ///                                   ║
-║ 		add								# 4% ///                                   ║
-║ 		pop								# 4%                                       ║
-║ 		lea								# 4%                                       ║
-║ 		test							# 3% ///                                   ║
-║ 		je								# 3%                                       ║
-║ 		xor								# 2% ///                                   ║
-║ 		jmp								# 2%                                       ║
-║ 		jne								# 2%                                       ║
-║ 		ret								# 1%                                       ║
-║ 		inc								# 1% ///                                   ║
-║ 		sub								# 1% ///                                   ║
-║ 		fld								# 1%                                       ║
-║ 		and								# 1% ///                                   ║
-║ 		fstp							# 1%                                       ║
-║ 		shl								# 1% ///                                   ║
-║ 		or								# 1% ///                                   ║
-║ 		others							# 11%                                      ║
-║ 	                                                                               ║
+║         mov                            # 35%                                     ║
+║         push                           # 10%                                     ║
+║         call                           # 6%                                      ║
+║         cmp                            # 5% ///                                  ║
+║         add                            # 4% ///                                  ║
+║         pop                            # 4%                                      ║
+║         lea                            # 4%                                      ║
+║         test                           # 3% ///                                  ║
+║         je                             # 3%                                      ║
+║         xor                            # 2% ///                                  ║
+║         jmp                            # 2%                                      ║
+║         jne                            # 2%                                      ║
+║         ret                            # 1%                                      ║
+║         inc                            # 1% ///                                  ║
+║         sub                            # 1% ///                                  ║
+║         fld                            # 1%                                      ║
+║         and                            # 1% ///                                  ║
+║         fstp                           # 1%                                      ║
+║         shl                            # 1% ///                                  ║
+║         or                             # 1% ///                                  ║
+║         others                         # 11%                                     ║
+║                                                                                  ║
 ║ Any load and loop instructions are going to be hard to represent as maths        ║
 ║ operators - though I have had some thoughts about how to obfuscate those parts   ║
 ║ which I may or may not share depending on how far I get with working it out      ║
@@ -438,4 +441,7 @@
 ║                                                                                  ║
 ║ CWW                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
 </pre>
