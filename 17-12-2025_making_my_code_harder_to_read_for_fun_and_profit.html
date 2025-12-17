@@ -1,0 +1,441 @@
+<head>
+  <meta charset="utf-8">
+  <title>CWW.blog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div style="display: inline-block; text-align: left;"><pre>   
+ ══════════════════════════════════════════════════════════════════════════════════╗
+║ Contents                                                                         ║
+║ ------------------------------                                                   ║
+║ yara rules and bytecodes                                                         ║
+║ shellcode as accidental obfuscation                                              ║
+║ expanding maths equations as obfuscation                                         ║
+║ individual instruction obfuscation                                               ║
+║ issues and further stuff to do                                                   ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ I was as at a conference about malware recently, and someone did a talk on yara  ║
+║ rules that apply to bytecodes, which got me thinking...                          ║
+║                                                                                  ║
+║ For those of you (like myself) who had no idea what yara was - here is a brief   ║
+║ explanation:                                                                     ║
+║                                                                                  ║
+║ 	~ a language/tool for pattern matching                                         ║
+║ 	~ a rule contains 3 parts: [metadata] [strings-to-match] [condition]           ║
+║ 	~ generally used for identifying/classifying malware samples                   ║
+║                                                                                  ║
+║ In theory you could create this functionality in whatever language you prefer    ║
+║ but people seem to like the way these rules are structured                       ║
+║                                                                                  ║
+║ As an example, this is one from here: (github.com/Yara-Rules)                    ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ }                                                                                ║
+║                                                                                  ║
+║ rule prime_constants_char {                                                      ║
+║ 	meta:                                                                          ║
+║ 		author = "_pusher_"                                                        ║
+║ 		description = "list of primes [char]"                                      ║
+║ 		date = "2016-07"                                                           ║
+║ 	strings:                                                                       ║
+║ 		$c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f     ║
+║ 		53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7    ║
+║ 		d3 df e3 e5 e9 ef f1 fb }                                                  ║
+║ 	condition:                                                                     ║
+║ 		$c0                                                                        ║
+║ }                                                                                ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ The above is a list of primes that a piece of malware may use for various crypto ║
+║ applications - and can therefore be used to detect said malware from the         ║
+║ corresponding bytecodes                                                          ║
+║                                                                                  ║
+║ Were I to be the author of said malware, I could make some small change to my    ║
+║ bytecode in order to make this yara rule invalid, say for instance, by reversing ║
+║ the order that the primes are listed                                             ║
+║                                                                                  ║
+║ This works for static items such as tables, lists and hardcoded values - but the ║
+║ more problematic signatures come from bytecode functions                         ║
+║                                                                                  ║
+║ Here is the strings section from a yara rule for detecting CRT (wiki for CRT) im ║plementation in
+║ the Miracl malware:                                                              ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ $c0 = { 51 56 57 e8 ?? ?? ?? ?? 8b 74 24 10 8b f8 89 7c 24 08 83 7e 0c 02 0f 8c  ║
+║  99 01 00 00 8b 87 18 02 00 00 85 c0 0f 85 8b 01 00 00 8b 57 1c 42 8b c2 89 57   ║
+║  1c 83 f8 18 7d 17 c7 44 87 20 4a 00 00 00 8b 87 2c 02 00 00 85 c0 74 05 e8 ??   ║
+║  ?? ?? ?? 8b 46 04 8b 54 24 14 53 55 8b 08 8b 02 51 50 e8 ?? ?? ?? ?? 8b 4e 0c   ║
+║  b8 01 00 00 00 83 c4 08 33 ed 3b c8 89 44 24 18 0f 8e c5 00 00 00 bf 04 00 00   ║
+║  00 8b 46 04 8b 0c 07 8b 10 8b 44 24 1c 51 52 8b 0c 07 51 e8 ?? ?? ?? ?? 8b 56   ║
+║  04 8b 4e 08 8b 04 }                                                             ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Our issue here is that this isn't just data we can scramble as we please, we     ║
+║ have to preserve its functionality. It is the difficulty of translating code     ║
+║ that does X into different code that still does X that means "signatures" can    ║
+║ often infer what malware does without running it                                 ║
+║                                                                                  ║
+║ The answer to this problem is obfuscation - creating binaries where the          ║
+║ instructions are scrambled in a way that renders them very tricky to understand, ║
+║ but that still execute as intended                                               ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ I first came across assembly obfuscation when writing shellcode. As with many    ║
+║ overflows - the target buffer was a NULL terminated c-string, so any "0x00"      ║
+║ values in the shellcode would indicate the end of the string, and halt execution ║
+║ of the rest of the bytecode.                                                     ║
+║                                                                                  ║
+║ Most shellcodes might look something like this in assembly:                      ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ .global _start                                                                   ║
+║ _start:                                                                          ║
+║ .intel_syntax noprefix                                                           ║
+║         mov rax, 0x59                 	# 59 = syscall for execve              ║
+║         lea rdi, [rip+binsh]        	# load pointer to bin/sh                   ║
+║         mov rsi, 0x00                  	# sets second arg to null              ║
+║         mov rdx, 0x00                  	# sets third arg as 0                  ║
+║         syscall                     	# invoke execve                            ║
+║ binsh:                                                                           ║
+║         .string "/bin/sh"                                                        ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Even without looking at the bytecode, we can see that there will be "0x00" bytes ║
+║ in the bytecode, when we look at it fully we can see there are even more:        ║
+║                                                                                  ║
+║ (hexdump of an executable when compiled from the above assembly)                 ║
+╠══------------------------------------------------------------------------------══╣
+║ 00000000  48 c7 c0 3b 00 00 00 48  8d 3d 08 00 00 00 48 31  |H..;...H.=....H1|   ║
+║ 00000010  f6 48 31 d2 0f 05 2f 62  69 6e 2f 73 68 00        |.H1.../bin/sh.|     ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ After a while of tinkering I ended up with the following assembly:               ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ .global _start                                                                   ║
+║ _start:                                                                          ║
+║ .intel_syntax noprefix                                                           ║
+║ 		xor rax, rax                                                               ║
+║ 		mov al, 59						# 59 = syscall for execve                  ║
+║ 		mov byte ptr [rsp+0], 0x2f		# "/bin/sh" byte by byte                   ║
+║ 		mov byte ptr [rsp+1], 0x62                                                 ║
+║ 		mov byte ptr [rsp+2], 0x69                                                 ║
+║ 		mov byte ptr [rsp+3], 0x6e                                                 ║
+║ 		mov byte ptr [rsp+4], 0x2f                                                 ║
+║ 		mov byte ptr [rsp+5], 0x73                                                 ║
+║ 		mov byte ptr [rsp+6], 0x68                                                 ║
+║ 		xor cl, cl                                                                 ║
+║ 		mov byte ptr [rsp+7], cl                                                   ║
+║ 		mov rdi, rsp                                                               ║
+║ 		xor rsi, rsi					# sets second arg to null                  ║
+║ 		xor rdx, rdx					# sets third arg as 0                      ║
+║ 		syscall							# invoke execve                            ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Which yielded the following "0x00" free bytecode:                                ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ 00000000  48 31 c0 b0 3b c6 04 24  2f c6 44 24 01 62 c6 44  |H1..;..$/.D$.b.D|   ║
+║ 00000010  24 02 69 c6 44 24 03 6e  c6 44 24 04 2f c6 44 24  |$.i.D$.n.D$./.D$|   ║
+║ 00000020  05 73 c6 44 24 06 68 30  c9 88 4c 24 07 48 89 e7  |.s.D$.h0..L$.H..|   ║
+║ 00000030  48 31 f6 48 31 d2 0f 05                           |H1.H1...|           ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ What exactly I did isn't important necessarily - but in the process of changing  ║
+║ around the instructions, it became clear to me that the first assembly code      ║
+║ block was a lot easier to read than the second. I'd done obfuscation by accident ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ Later on I came across this (link to phrack article) article in Prack 71, where  ║the author (Ege BALCI)
+║ uses a bunch of tricks to transform assembly instructions into obfuscated blocks ║
+║                                                                                  ║
+║ The moment it sort of clicked for me was in comparing assembly instructions to   ║
+║ maths operations:                                                                ║
+║                                                                                  ║
+║ (from the article):                                                              ║
+╠══------------------------------------------------------------------------------══╣
+║ mov, push, pop, lea ---> =                                                       ║
+║       cmp, sub, sbb ---> -                                                       ║
+║            add, adc ---> +                                                       ║
+║           imul, mul ---> *                                                       ║
+║           idiv, div ---> /                                                       ║
+║           test, and ---> &                                                       ║
+║                  or ---> |                                                       ║
+║                 xor ---> ^                                                       ║
+║                 shl ---> <<                                                      ║
+║                 shr ---> >>                                                      ║
+║                 not ---> '                                                       ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Using this, we can sort of map assembly onto equations, as an example the        ║
+║ following code block is given (where [eax = x], [ebx = y]):                      ║
+║                                                                                  ║
+║ (from the article)                                                               ║
+╠══------------------------------------------------------------------------------══╣
+║         mov ecx, 0x8    ) -------------> z = 8       )                           ║
+║         shl eax, 0x2    ) -------------> 4x          )                           ║
+║         shl ebx, 0x1    ) -------------> 2y          ) ---> ((4x+2y+8)**2)       ║
+║         add eax, ebx    ) -------------> 4x+2y       )                           ║
+║         add eax, ecx    ) -------------> 4x+2y+8     )                           ║
+║         imul eax, eax   ) -------------> (4x+2y+8)^2 )                           ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ If you were to expand:                                                           ║
+║ -> ((4x+2y+8)**2)                                                                ║
+║                                                                                  ║
+║ You would get:                                                                   ║
+║ -> 16x^2 + 16xy + 64x + 4y^2 + 32y + 64                                          ║
+║                                                                                  ║
+║ The article then goes on to say: "When this expression is transformed back into  ║
+║ assembly code, you'll see that multiple instructions are changed, new ones are   ║
+║ added, and some disappear. The only problem for us is that some instructions     ║
+║ stay exactly the same, which may still trigger detection."                       ║
+║                                                                                  ║
+║ No code is provided though to prove/assert this - so I decided to see if I could ║
+║ try and create a representation of the expanded equation in assembly. It is      ║
+║ quite messy, but does result in the desired value in eax. (and, after all, isn't ║
+║ messy what we are after with obfuscation?)                                       ║
+║                                                                                  ║
+║ For this one: [r10 = x] [r1 = y]                                                 ║
+╠══------------------------------------------------------------------------------══╣
+║ 		shl r10, 0x02 					# r10 = "4x"                               ║
+║ 		mov ebx, r10                                                               ║
+║ 		imul ebx, ebx                                                              ║
+║ 		mov edx, ebx 					# add "16x**2"                             ║
+║ 		xor ebx, ebx 					# clear                                    ║
+║ 		shl r11, 0x02 					# r11 = "4y"                               ║
+║ 		mov ebx, r1                                                                ║
+║ 		imul ebx, r11           		# add "16xy"                               ║
+║ 		add edx, ebx                                                               ║
+║ 		xor ebx, ebx 					# clear                                    ║
+║ 		shl r10, 0x04 					# r10 = "64x"                              ║
+║ 		add edx, r10 					# add "64x"                                ║
+║ 		shr r11, 0x1 					# r11 = "2y"                               ║
+║ 		mov ebx, r11                                                               ║
+║ 		imul ebx, ebx                                                              ║
+║ 		add edx, ebx 					# add "4y**2"                              ║
+║ 		xor ebx, ebx 					# clear                                    ║
+║ 		shl r11, 0x04 					# r11 = "32y"                              ║
+║ 		add edx, r11 					# add "32y"                                ║
+║ 		add edx, 0x40 					# add 64                                   ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ As for the claim that "some instructions stay exactly the same", most are        ║
+║ quite different. Perhaps the [shr] and [shl] instructions betray the core        ║
+║ functionality of the code in a way that can still be picked up by yara rules?    ║
+║                                                                                  ║
+║ However, I am not in the business of doubting people much more knowledgeable     ║
+║ than I - so I'll take it as gospel that the above transformation is not          ║
+║ sufficient for obfuscation                                                       ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ The interesting bit comes once we commit to trying to translate individual       ║
+║ assembly instructions, rather than blocks of instructions. Take our little       ║
+║ heuristic trick from earlier; equating instructions to maths:                    ║
+║                                                                                  ║
+║ If we take the add instruction to be equivalent to "+"                           ║
+║                                                                                  ║
+║ 		add eax, 0x10                                                              ║
+║ 		                                                                           ║
+║ This can be rephrased as:                                                        ║
+║                                                                                  ║
+║ 		x + 16                                                                     ║
+║                                                                                  ║
+║ As with all additions, this can be expanded to:                                  ║
+║                                                                                  ║
+║ 		x - y - 10 + 2 + 21 + 3 + y                                                ║
+║ 		                                                                           ║
+║ The original instruction can be expanded to:                                     ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ 		sub eax, y                                                                 ║
+║ 		sub eax, 0xa                                                               ║
+║ 		add eax, 0x2                                                               ║
+║ 		add eax, 0xa5                                                              ║
+║ 		add eax, 0x3                                                               ║
+║ 		add eax, y                                                                 ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ There are other instructions that can be approximated to "+" aswell:             ║
+║                                                                                  ║
+║ 		add                                                                        ║
+║ 		adc                                                                        ║
+║ 		sub								# add - x                                  ║
+║ 		sbb                                                                        ║
+║ 		inc								# add 1                                    ║
+║ 		dec								# add -1                                   ║
+║ 		cmp								# sub but with flags                       ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ What about logical operators? - turns out we can do a similar thing:             ║
+║                                                                                  ║
+║ If we take the xor instruction to be equivalent to "||"                          ║
+║                                                                                  ║
+║ 		xor eax, 0x10                                                              ║
+║ 		                                                                           ║
+║ Can be rephrased as:                                                             ║
+║                                                                                  ║
+║ 		x || 16                                                                    ║
+║ 		                                                                           ║
+║ The general case for XOR translation is (DeMorgan's laws) (link to DeMorgan's th ║eorem wiki):
+║                                                                                  ║
+║ 		x || c = ('x & c) | (x & 'c)                                               ║
+║ 	                                                                               ║
+║ So we can translate our logical operation to:                                    ║
+║                                                                                  ║
+║ 		x || 0x10 = ('x & 0x10) | (x & '0x10)                                      ║
+║ 		                                                                           ║
+║ Where  | = bitwise or                                                            ║
+║ 	   ' = bitwise not                                                             ║
+║ 	   & = bitwise and                                                             ║
+║ 	  || = bitwise xor                                                             ║
+║ 	                                                                               ║
+║ This could look something like:                                                  ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ 		mov r1, eax                                                                ║
+║ 		not r1                                                                     ║
+║ 		and r1, 0x10                                                               ║
+║ 		mov r2, 0x10                                                               ║
+║ 		not r2                                                                     ║
+║ 		and r2, eax                                                                ║
+║ 		or r1, r2                                                                  ║
+║ 		mov eax, r1						# store result in eax                      ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Other logical instructions that have translations include:                       ║
+║                                                                                  ║
+║ 		or 								# x or,  y -> not((not x) and (not y))     ║
+║ 		and								# x and, y -> not((not x) or (not y))      ║
+║ 		not								# not x -> x xor 1                         ║
+║ 		test							# same as and - but with flags             ║
+║ 	                                                                               ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ I'm sure you can see the pattern here, next are the bitwise shift operators:     ║
+║                                                                                  ║
+║ shl and shr are used (by me) as shorthands for multiplying and dividing by       ║
+║ powers of 2, or for moving bytes around from high to low                         ║
+║                                                                                  ║
+║ So, if we take shl to be equivalent to "<<"                                      ║
+║                                                                                  ║
+║ 		shl eax, 0x5                                                               ║
+║ 	                                                                               ║
+║ Can be rephrased as:                                                             ║
+║ 	                                                                               ║
+║ 		x << 5                                                                     ║
+║ 	                                                                               ║
+║ As long as our shifts total 5, we can step through piecemeal:                    ║
+║                                                                                  ║
+║ 		x << 2                                                                     ║
+║ 		x << 3                                                                     ║
+║ 	                                                                               ║
+║ we can't shift greater than 5 - as we could lose some bits at the end. Say we    ║
+║ have the following byte:                                                         ║
+║                                                                                  ║
+║ -> [bin] 00000001 -> [dec] 1                                                     ║
+║                                                                                  ║
+║ if we use the shl operation on this twice, we would get:                         ║
+║                                                                                  ║
+║ -> [bin] 00000100 -> [dec] 4                                                     ║
+║                                                                                  ║
+║ But if we do a shr operation first - then our two shl operations, that rightmost ║
+║ bit would get discarded as shift operations discard any bits pushed off the      ║
+║ bottom of the byte                                                               ║
+║                                                                                  ║
+║ The solution is to use the rol and ror instructions, which "roll" over the bits  ║
+║ from the lowest to the highest places - preserving our bits. As a general rule   ║
+║ we can translate shift operations in the following way:                          ║
+║                                                                                  ║
+║ 		shl eax, 0x5                                                               ║
+║ 	                                                                               ║
+║ Which can be taken as:                                                           ║
+║                                                                                  ║
+║ 		x >> 5                                                                     ║
+║ 	                                                                               ║
+║ We need to know the size of our register, in our case eax is 32 bits. Then we    ║
+║ can choose a "target", which is 5 + n(32) where n = a random number              ║
+║                                                                                  ║
+║ Lets take rol and ror to be equivalent to "<<<" and ">>>" (i couldn't find any   ║
+║ convention about what symbol to use for this - so "<<<" it is)                   ║
+║                                                                                  ║
+║ For this example lets take our "target" to be = 37:                              ║
+║                                                                                  ║
+║ 		x >>> 100 >>> 1 <<< 64                                                     ║
+║                                                                                  ║
+║ Which could look something like:                                                 ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ 		ror eax, 0x64                                                              ║
+║ 		ror eax, 0x1                                                               ║
+║ 		rol eax, 0x40                                                              ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                  ║
+║ I haven't quite worked out the equality ones, yet alone all the other super      ║
+║ important assembly instructions present in most binaries. This (https://www.strc ║hr.com/x86_machine_code_statistics) paper lists the
+║ most commonly seen instructions in three popular opensource applications, I've   ║
+║ marked the ones I can scramble so far with "///":                                ║
+║                                                                                  ║
+║ 		mov								# 35%                                      ║
+║ 		push							# 10%                                      ║
+║ 		call							# 6%                                       ║
+║ 		cmp								# 5% ///                                   ║
+║ 		add								# 4% ///                                   ║
+║ 		pop								# 4%                                       ║
+║ 		lea								# 4%                                       ║
+║ 		test							# 3% ///                                   ║
+║ 		je								# 3%                                       ║
+║ 		xor								# 2% ///                                   ║
+║ 		jmp								# 2%                                       ║
+║ 		jne								# 2%                                       ║
+║ 		ret								# 1%                                       ║
+║ 		inc								# 1% ///                                   ║
+║ 		sub								# 1% ///                                   ║
+║ 		fld								# 1%                                       ║
+║ 		and								# 1% ///                                   ║
+║ 		fstp							# 1%                                       ║
+║ 		shl								# 1% ///                                   ║
+║ 		or								# 1% ///                                   ║
+║ 		others							# 11%                                      ║
+║ 	                                                                               ║
+║ Any load and loop instructions are going to be hard to represent as maths        ║
+║ operators - though I have had some thoughts about how to obfuscate those parts   ║
+║ which I may or may not share depending on how far I get with working it out      ║
+║                                                                                  ║
+║ While searching for information about this topic, I came across something that   ║
+║ felt very unintuitive. It turns out that addressing in x86 is Turing-complete    ║
+║ (who knew) so instructions that use addressing can, in theory, run any program.  ║
+║ mov is one such instruction, and the one the paper focussed on                   ║
+║                                                                                  ║
+║ As an aside, it has one hell of an abstract:                                     ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ It is well-known that the x86 instruction set is baroque, overcomplicated, and   ║
+║ redundantly redundant. We show just how much fluff it has by demonstrating that  ║
+║ it remains Turing-complete when reduced to just one instruction. The instruction ║
+║ we choose is mov, which can do both loads and stores. We use no unusual          ║
+║ addressing modes, self-modifying code, or runtime code generation. Using just    ║
+║ this instruction (and a single unconditional branch at the end of the program to ║
+║ make nontermination possible), we demonstrate how an arbitrary Turing machine    ║
+║ can be simulated.                                                                ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Surely then, there must be a way of representing these troublesome               ║
+║ loop/move/load instructions using some other instruction? This has the added     ║
+║ benefit of making your binary look very funny and most likely make any reverse   ║
+║ engineer re-consider their life choices                                          ║
+║                                                                                  ║
+║ I think if I ever do manage to make an obfuscation compiler, it should only use  ║
+║ xor instructions, which gives me the opportunity to call it the "obfuscatXOR"    ║
+║                                                                                  ║
+║ CWW                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+</pre>
