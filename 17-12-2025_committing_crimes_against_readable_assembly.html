@@ -35,20 +35,20 @@
 ║ As an example, this is one from <a href="https://github.com/Yara-Rules">here</a>:                                            ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ }                                                                                ║
+║ <o>}</o>                                                                                ║
 ║                                                                                  ║
-║ rule prime_constants_char {                                                      ║
-║     meta:                                                                        ║
-║         author = "_pusher_"                                                      ║
-║         description = "list of primes [char]"                                    ║
-║         date = "2016-07"                                                         ║
-║     strings:                                                                     ║
-║         $c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f   ║
-║         53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7  ║
-║         d3 df e3 e5 e9 ef f1 fb }                                                ║
-║     condition:                                                                   ║
-║         $c0                                                                      ║
-║ }                                                                                ║
+║ <o>rule prime_constants_char {</o>                                                      ║
+║     <o>meta:</o>                                                                        ║
+║         <o>author = "_pusher_"</o>                                                      ║
+║         <o>description = "list of primes [char]"</o>                                    ║
+║         <o>date = "2016-07"</o>                                                         ║
+║     <o>strings:</o>                                                                     ║
+║         <o>$c0 = { 03 05 07 0b 0d 11 13 17 1d 1f 25 29 2b 2f 35 3b 3d 43 47 49 4f</o>   ║
+║         <o>53 59 61 65 67 6b 6d 71 7f 83 89 8b 95 97 9d a3 a7 ad b3 b5 bf c1 c5 c7</o>  ║
+║         <o>d3 df e3 e5 e9 ef f1 fb }</o>                                                ║
+║     <o>condition:</o>                                                                   ║
+║         <o>$c0</o>                                                                      ║
+║ <o>}</o>                                                                                ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ The above is a list of primes that a piece of malware may use for various crypto ║
@@ -66,13 +66,13 @@
 ║ some malware analysed by Miracl                                                  ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ $c0 = { 51 56 57 e8 ?? ?? ?? ?? 8b 74 24 10 8b f8 89 7c 24 08 83 7e 0c 02 0f 8c  ║
-║  99 01 00 00 8b 87 18 02 00 00 85 c0 0f 85 8b 01 00 00 8b 57 1c 42 8b c2 89 57   ║
-║  1c 83 f8 18 7d 17 c7 44 87 20 4a 00 00 00 8b 87 2c 02 00 00 85 c0 74 05 e8 ??   ║
-║  ?? ?? ?? 8b 46 04 8b 54 24 14 53 55 8b 08 8b 02 51 50 e8 ?? ?? ?? ?? 8b 4e 0c   ║
-║  b8 01 00 00 00 83 c4 08 33 ed 3b c8 89 44 24 18 0f 8e c5 00 00 00 bf 04 00 00   ║
-║  00 8b 46 04 8b 0c 07 8b 10 8b 44 24 1c 51 52 8b 0c 07 51 e8 ?? ?? ?? ?? 8b 56   ║
-║  04 8b 4e 08 8b 04 }                                                             ║
+║ <o>$c0 = { 51 56 57 e8 ?? ?? ?? ?? 8b 74 24 10 8b f8 89 7c 24 08 83 7e 0c 02 0f 8c</o>  ║
+║  <o>99 01 00 00 8b 87 18 02 00 00 85 c0 0f 85 8b 01 00 00 8b 57 1c 42 8b c2 89 57</o>   ║
+║  <o>1c 83 f8 18 7d 17 c7 44 87 20 4a 00 00 00 8b 87 2c 02 00 00 85 c0 74 05 e8 ??</o>   ║
+║  <o>?? ?? ?? 8b 46 04 8b 54 24 14 53 55 8b 08 8b 02 51 50 e8 ?? ?? ?? ?? 8b 4e 0c</o>   ║
+║  <o>b8 01 00 00 00 83 c4 08 33 ed 3b c8 89 44 24 18 0f 8e c5 00 00 00 bf 04 00 00</o>   ║
+║  <o>00 8b 46 04 8b 0c 07 8b 10 8b 44 24 1c 51 52 8b 0c 07 51 e8 ?? ?? ?? ?? 8b 56</o>   ║
+║  <o>04 8b 4e 08 8b 04 }</o>                                                             ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Our issue here is that this isn't just data we can scramble as we please, we     ║
@@ -87,7 +87,7 @@
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I first came across assembly obfuscation when writing shellcode. As with many    ║
-║ overflows - the target buffer was a NULL terminated c-string, so any "0x00"      ║
+║ overflows - the target buffer was a NULL terminated c-string, so any "<r>0x00</r>"      ║
 ║ values in the shellcode would indicate the end of the string, and halt execution ║
 ║ of the rest of the bytecode.                                                     ║
 ║                                                                                  ║
@@ -106,13 +106,13 @@
 ║         .string "/bin/sh"                                                        ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ Even without looking at the bytecode, we can see that there will be "0x00" bytes ║
+║ Even without looking at the bytecode, we can see that there will be "<r>0x00</r>" bytes ║
 ║ in the bytecode, when we look at it fully we can see there are even more:        ║
 ║                                                                                  ║
 ║ (hexdump of an executable when compiled from the above assembly)                 ║
 ╠══------------------------------------------------------------------------------══╣
-║ 00000000  48 c7 c0 3b 00 00 00 48  8d 3d 08 00 00 00 48 31  |H..;...H.=....H1|   ║
-║ 00000010  f6 48 31 d2 0f 05 2f 62  69 6e 2f 73 68 00        |.H1.../bin/sh.|     ║
+║ <o>00000000  48 c7 c0 3b <r>00</r> <r>00</r> <r>00</r> 48  8d 3d 08 <r>00</r> <r>00</r> <r>00</r> 48 31  |H..;...H.=....H1|   ║
+║ 00000010  f6 48 31 d2 0f 05 2f 62  69 6e 2f 73 68 <r>00</r>        |.H1.../bin/sh.|</o>     ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ After a while of tinkering I ended up with the following assembly:               ║
@@ -138,13 +138,13 @@
 ║         syscall                        # invoke execve                           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ Which yielded the following "0x00" free bytecode:                                ║
+║ Which yielded the following "<r>0x00</r>" free bytecode:                                ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ 00000000  48 31 c0 b0 3b c6 04 24  2f c6 44 24 01 62 c6 44  |H1..;..$/.D$.b.D|   ║
-║ 00000010  24 02 69 c6 44 24 03 6e  c6 44 24 04 2f c6 44 24  |$.i.D$.n.D$./.D$|   ║
-║ 00000020  05 73 c6 44 24 06 68 30  c9 88 4c 24 07 48 89 e7  |.s.D$.h0..L$.H..|   ║
-║ 00000030  48 31 f6 48 31 d2 0f 05                           |H1.H1...|           ║
+║ <o>00000000  48 31 c0 b0 3b c6 04 24  2f c6 44 24 01 62 c6 44  |H1..;..$/.D$.b.D|</o>   ║
+║ <o>00000010  24 02 69 c6 44 24 03 6e  c6 44 24 04 2f c6 44 24  |$.i.D$.n.D$./.D$|</o>   ║
+║ <o>00000020  05 73 c6 44 24 06 68 30  c9 88 4c 24 07 48 89 e7  |.s.D$.h0..L$.H..|</o>   ║
+║ <o>00000030  48 31 f6 48 31 d2 0f 05                           |H1.H1...|</o>           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ What exactly I did isn't important necessarily - but in the process of changing  ║
