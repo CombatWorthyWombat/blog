@@ -356,7 +356,7 @@
 ║ from the lowest to the highest places - preserving our bits. As a general rule   ║
 ║ we can translate shift operations in the following way:                          ║
 ║                                                                                  ║
-║         <pu>shl</pu> <g>eax</g>, <bl>0x5</bl>                                                             ║
+║         <pu>shr</pu> <g>eax</g>, <bl>0x5</bl>                                                             ║
 ║                                                                                  ║
 ║ Which can be taken as:                                                           ║
 ║                                                                                  ║
@@ -366,7 +366,7 @@
 ║ can choose a "target", which is <bl>5 + n(32)</bl> where <bl>n</bl> = a random number              ║
 ║                                                                                  ║
 ║ Lets take <pu>rol</pu> and <pu>ror</pu> to be equivalent to "<<<" and ">>>" (I couldn't find any   ║
-║ convention about what symbol to use for this - so "<<<" it is)                   ║
+║ convention about what symbol to use for this - so "<r><<<</r>" it is)                   ║
 ║                                                                                  ║
 ║ For this example lets take our "target" to be = <bl>37</bl>:                              ║
 ║                                                                                  ║
