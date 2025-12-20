@@ -175,7 +175,7 @@
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Using this, we can sort of map assembly onto equations, as an example the        ║
-║ following code block is given (where [<g>eax</g> = x], [<g>ebx</g> = y]):                      ║
+║ following code block is given (where <f>[<g>eax</g> = <bl>x</bl>], [<g>ebx</g> = <bl>y</bl>]</f>):                      ║
 ║                                                                                  ║
 ║ <f1>(from the article)</f1>                                                               ║
 ╠══------------------------------------------------------------------------------══╣
@@ -328,7 +328,7 @@
 ║                                                                                  ║
 ║ So, if we take <pu>shl</pu> to be equivalent to "<r><<</r>"                                      ║
 ║                                                                                  ║
-║         <pu>shl</pu> <g>eax</g>, 0x5                                                             ║
+║         <pu>shl</pu> <g>eax</g>, <bl>0x5</bl>                                                             ║
 ║                                                                                  ║
 ║ Can be rephrased as:                                                             ║
 ║                                                                                  ║
@@ -342,11 +342,11 @@
 ║ we can't shift greater than <bl>5</bl> - as we could lose some bits at the end. Say we    ║
 ║ have the following byte:                                                         ║
 ║                                                                                  ║
-║ <f1>-></f1> [bin] 00000001 -> <bl>[dec] 1</bl>                                                     ║
+║ <f1>-></f1> <y>[bin]</y> <bl>00000001</bl> <f1>-></f1> <y>[dec]</y> <bl>1</bl>                                                     ║
 ║                                                                                  ║
 ║ if we use the <pu>shl</pu> operation on this twice, we would get:                         ║
 ║                                                                                  ║
-║ <f1>-></f1> [bin] 00000100 -> <bl>[dec] 4</bl>                                                     ║
+║ <f1>-></f1> <y>[bin]</y> <bl>00000100</bl> <f1>-></f1> <y>[dec]</y> <bl>4</bl>                                                     ║
 ║                                                                                  ║
 ║ But if we do a <pu>shr</pu> operation first - then our two <pu>shl</pu> operations, that rightmost ║
 ║ bit would get discarded as shift operations discard any bits pushed off the      ║
