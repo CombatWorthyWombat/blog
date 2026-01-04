@@ -49,274 +49,275 @@ a:focus {
 <body>
 <pre>
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║ Contents - 03-01-2026 committing crimes against readable assembly; what if our   ║
-║ only instruction was xor?                                                        ║
+║ <bl>Contents - 03-01-2026 committing crimes against readable assembly part 2, only</bl>   ║
+║ <bl>xor?</bl>                                                                             ║
 ║ -------------------------------------------------------------------------------- ║
-║ setting some ground-rules                                                        ║
-║ xor info-dump                                                                    ║
-║ clearing registers                                                               ║
-║ loading and moving values around registers                                       ║
-║ conditional flow                                                                 ║
-║ basic arithmetic                                                                 ║
-║ basic logic                                                                      ║
+║ <y>setting some ground-rules</y>                                                        ║
+║ <y>xor info-dump</y>                                                                    ║
+║ <y>clearing registers</y>                                                               ║
+║ <y>loading and moving values around registers</y>                                       ║
+║ <y>conditional flow</y>                                                                 ║
+║ <y>basic arithmetic</y>                                                                 ║
+║ <y>basic logic</y>                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                  ║
 ║ So, where do we even begin?                                                      ║
 ║                                                                                  ║
-║ If we are to make a complier for regular assembly, that only outputs xor         ║
+║ If we are to make a complier for regular assembly, that only outputs <pu>xor</pu>         ║
 ║ instructions (that's the aim here btw) then we better be able to translate a     ║
-║ decent chunk of the assembly instruction set into xor equivalents                ║
+║ decent chunk of the assembly instruction set into <pu>xor</pu> equivalents                ║
 ║                                                                                  ║
-║ here is the list of assembly instructions, in order of usage in some popular     ║
+║ Here is the list of assembly instructions, in order of usage in some popular     ║
 ║ opensource programs (from here):                                                 ║ link to the assembly instruction distribution
 ║                                                                                  ║
-║ mov                            # 35%                                             ║
-║ push                           # 10%                                             ║
-║ call                           # 6%                                              ║
-║ cmp                            # 5%                                              ║
-║ add                            # 4%                                              ║
-║ pop                            # 4%                                              ║
-║ lea                            # 4%                                              ║
-║ test                           # 3%                                              ║
-║ je                             # 3%                                              ║
-║ xor                            # 2%                                              ║
-║ jmp                            # 2%                                              ║
-║ jne                            # 2%                                              ║
-║ ret                            # 1%                                              ║
-║ inc                            # 1%                                              ║
-║ sub                            # 1%                                              ║
-║ fld                            # 1%                                              ║
-║ and                            # 1%                                              ║
-║ fstp                           # 1%                                              ║
-║ shl                            # 1%                                              ║
-║ or                             # 1%                                              ║
-║ others                         # 11%                                             ║
+║         <pu>mov</pu>                       <f1># 35%</f1>                                          ║
+║         <pu>push</pu>                      <f1># 10%</f1>                                          ║
+║         <pu>call</pu>                      <f1># 6%</f1>                                           ║
+║         <pu>cmp</pu>                       <f1># 5%</f1>                                           ║
+║         <pu>add</pu>                       <f1># 4%</f1>                                           ║
+║         <pu>pop</pu>                       <f1># 4%</f1>                                           ║
+║         <pu>lea</pu>                       <f1># 4%</f1>                                           ║
+║         <pu>test</pu>                      <f1># 3%</f1>                                           ║
+║         <pu>je</pu>                        <f1># 3%</f1>                                           ║
+║         <pu><pu>xor</pu></pu>                       <f1># 2%</f1>                                           ║
+║         <pu>jmp</pu>                       <f1># 2%</f1>                                           ║
+║         <pu>jne</pu>                       <f1># 2%</f1>                                           ║
+║         <pu>ret</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>inc</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>sub</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>fld</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>and</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>fstp</pu>                      <f1># 1%</f1>                                           ║
+║         <pu>shl</pu>                       <f1># 1%</f1>                                           ║
+║         <pu>or</pu>                        <f1># 1%</f1>                                           ║
+║         <f>others</f>                    <f1># 11%</f1>                                          ║
 ║                                                                                  ║
 ║ As a realistic aim, lets rule out some assembly instructions that I think might  ║
 ║ be either pretty tricky, or just require abstraction after we handle the more    ║
 ║ fundamental items:                                                               ║
 ║                                                                                  ║
-║ -> floating point stuff (fld, fstp) I don't even know how these work tbh         ║
-║ -> anything that alters rip (ret, call, jmp, syscall, 0x80)                      ║
-║ -> stack addressing (push, pop) maybe later?                                     ║
+║ <f1>-></f1> Floating point stuff (<pu>fld</pu>, <pu>fstp</pu>) <f1>I don't even know how these work tbh...</f1>      ║
+║ <f1>-></f1> Anything that alters rip (<pu>ret</pu>, <pu>call</pu>, <pu>jmp</pu>, <pu>syscall</pu>, <pu>0x80</pu>)                      ║
+║ <f1>-></f1> Stack addressing (<pu>push</pu>, <pu>pop</pu>) <f1>maybe later?</f1>                                     ║
 ║                                                                                  ║
-║ this does mean we can't just pipe the output of your favourite complier into     ║
-║ our xor program. So we'd potentially be limited to my handwritten assembly       ║
+║ This does mean we can't just pipe the output of your favourite complier into     ║
+║ our <pu>xor</pu> program. So we'd potentially be limited to my handwritten assembly       ║
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ I do have to remind myself of the full range of options available to us from     ║
-║ the xor instruction - if you are familiar with this please feel free to skip     ║
+║ the <pu>xor</pu> instruction - if you are familiar with this please feel free to skip     ║
 ║ this section.                                                                    ║
 ║                                                                                  ║
-║ The truth table for XOR is as follows:                                           ║
+║ The truth table for <pu>xor</pu> is as follows:                                           ║
 ║                                                                                  ║
-║  A  XOR  B  =   C                                                                ║
-║  1       1  ->  0                                                                ║
-║  1       0  ->  1                                                                ║
-║  0       1  ->  1                                                                ║
-║  0       0  ->  0                                                                ║
+║  <bl>A  <pu>xor</pu>  B  <f1>=</f1>   C</bl>                                                                ║
+║  <bl>1       1  <f1>-></f1>  0</bl>                                                                ║
+║  <bl>1       0  <f1>-></f1>  1</bl>                                                                ║
+║  <bl>0       1  <f1>-></f1>  1</bl>                                                                ║
+║  <bl>0       0  <f1>-></f1>  0</bl>                                                                ║
 ║                                                                                  ║
-║ XOR also has the following useful properties:                                    ║
+║ <pu>xor</pu> also has the following useful properties:                                    ║
 ║                                                                                  ║
-║ x XOR a = a XOR x (order of operations doesn’t matter)                           ║
-║ a XOR a = 0                                                                      ║
-║ a XOR x XOR a = x (commutative - XORing by the same value twice cancels out)     ║
-║ x XOR 0 = x                                                                      ║
-║ a XOR (b XOR c) = (a XOR b) XOR c (associative)                                  ║
+║ <bl>x <pu>xor</pu> a <f>=</f> a <pu>xor</pu> x <f1>(order of operations doesn’t matter)</f1></bl>                           ║
+║ <bl>a <pu>xor</pu> a <f>=</f> 0</bl>                                                                      ║
+║ <bl>a <pu>xor</pu> x <pu>xor</pu> a <f>=</f> x <f1>(commutative - xoring by the same value twice cancels out)</f1></bl>     ║
+║ <bl>x <pu>xor</pu> 0 <f>=</f> x</bl>                                                                      ║
+║ <bl>a <pu>xor</pu> (b <pu>xor</pu> c) <f>=</f> (a <pu>xor</pu> b) <pu>xor</pu> c <f1>(associative)</f1></bl>                                  ║
 ║                                                                                  ║
-║ Here is the blurb from the x86_64 intel instruction manual for xor:              ║
+║ Here is the blurb from the x86_64 intel instruction manual for <pu>xor</pu>:              ║ (link to the page for xor)
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ Performs a bitwise exclusive OR (XOR) operation on the destination (first) and   ║
-║ source (second) operands and stores the result in the destination operand        ║
-║ location. The source operand can be an immediate, a register, or a memory        ║
-║ location; the destination operand can be a register or a memory location.        ║
-║ (However, two memory operands cannot be used in one instruction.) Each bit of    ║
-║ the result is 1 if the corresponding bits of the operands are different; each    ║
-║ bit is 0 if the corresponding bits are the same. This instruction can be used    ║
-║ with a LOCK prefix to allow the instruction to be executed atomically.           ║
+║ <f>Performs a bitwise exclusive OR (xor) operation on the destination (first) and</f>   ║
+║ <f>source (second) operands and stores the result in the destination operand</f>        ║
+║ <f>location. The source operand can be an immediate, a register, or a memory</f>        ║
+║ <f>location; the destination operand can be a register or a memory location.</f>        ║
+║ <f>(However, two memory operands cannot be used in one instruction.) Each bit of</f>    ║
+║ <f>the result is 1 if the corresponding bits of the operands are different; each</f>    ║
+║ <f>bit is 0 if the corresponding bits are the same. This instruction can be used</f>    ║
+║ <f>with a LOCK prefix to allow the instruction to be executed atomically.</f>           ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ so that allows us to play with not only direct values, but registers and         ║
-║ intermediate values (-128 to 127 as well)                                        ║
+║ So that allows us to play with not only direct values, but registers and         ║
+║ intermediate values (<bl>-128 <f1>-></f1> 127</bl> as well)                                        ║
 ║                                                                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
 ║ If we can work out the following sorts of instructions we ought to be well on    ║
 ║ our way:                                                                         ║
 ║                                                                                  ║
-║ -> 1 clearing a register                                                         ║
-║ -> 2 loading and moving values around registers                                  ║
-║ -> 3 conditional flow                                                            ║
-║ -> 4 basic arithmetic                                                            ║
-║ -> 5 basic logic                                                                 ║
+║ <f1>-></f1> 1 clearing a register                                                         ║
+║ <f1>-></f1> 2 loading and moving values around registers                                  ║
+║ <f1>-></f1> 3 conditional flow                                                            ║
+║ <f1>-></f1> 4 basic arithmetic                                                            ║
+║ <f1>-></f1> 5 basic logic                                                                 ║
 ║                                                                                  ║
 ╠══-----==[ 1 ]==----------------------------------------------------------------══╣
 ║                                                                                  ║	
-║ Our first objective is pretty easy, if a number x is XORed with itself, it       ║
-║ always yields 0                                                                  ║
+║ Our first objective is pretty easy, if a number <bl>x</bl> is <pu>xor</pu>ed with itself, it       ║
+║ always yields <bl>0</bl>                                                                  ║
 ║                                                                                  ║
 ║ So a "clear" instruction like:                                                   ║
 ║                                                                                  ║
-║       mov eax, 0x00                                                              ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x00</bl></f>                                                              ║
 ║                                                                                  ║
 ║ Becomes:                                                                         ║
 ║                                                                                  ║
-║       xor eax, eax                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
 ║                                                                                  ║
 ╠══-----==[ 2 ]==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Loading values into registers is where we have our first couple of decisions to  ║
 ║ make                                                                             ║
 ║                                                                                  ║
-║ firstly, do we want all relevant program information be handled internally by    ║
-║ the xor instructions?                                                            ║
+║ Firstly, do we want all relevant program information be handled internally by    ║
+║ the <pu>xor</pu> instructions?                                                            ║
 ║                                                                                  ║
-║ and secondly (when done externally), how pure do we want to get with "only"      ║
-║ using xor?                                                                       ║
+║ And secondly (when done externally), how pure do we want to get with "only"      ║
+║ using <pu>xor</pu>?                                                                       ║
 ║                                                                                  ║
-║ say the answer to the first question is "yes - all logic should be handled in    ║
-║ code as xor", then loading 64 into rax could look like:                          ║
+║ Say the answer to the first question is <f>"yes - all logic should be handled in    ║
+║ code as xor"</f>, then loading <bl>64</bl> into <g>rax</g> could look like:                          ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, 0x40                                                              ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <bl>0x40</bl></f>                                                              ║
 ║                                                                                  ║
-║ The issue with this is twofold, though it's nothing to do with it not being xor  ║
+║ The issue with this is twofold, though it's nothing to do with it not being <pu>xor</pu>  ║
 ║                                                                                  ║
-║ Firstly - this way of loading values into registers is more efficient that a mov ║
+║ Firstly - this way of loading values into registers is more efficient that a <pu>mov</pu> ║
 ║ instruction, consequently then, this is a common way to see values loaded due to ║
 ║ compiler optimisation. Decompilers and seasoned reverse engineers alike can      ║
-║ recognise this pretty easily, and we can't have that.                            ║
+║ recognise this pretty easily, and we can't have that                             ║
 ║                                                                                  ║
-║ It's also revealing with regard to our hardcoded values. If our "64" had some    ║
+║ It's also revealing with regard to our hardcoded values. If our "<bl>64</bl>" had some    ║
 ║ inherent association (say it was a prime number used in crypto, or the address   ║
 ║ of a C2 server) then simply seeing that value can sometimes be enough to infer   ║
 ║ intent about a binary                                                            ║
 ║                                                                                  ║
 ║ This leads us to the intuitive solution to handle the hardcoded values outside   ║
-║ our code (in our compiler) where we could choose a random number n, such that    ║
-║ 64 xor n = a:                                                                    ║
+║ our code (in our compiler) where we could choose a random number <bl>n</bl>, such that    ║
+║ <bl>64</bl> <pu>xor</pu> <bl>n</bl> = <bl>a</bl>:                                                                    ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       xor rax, rax                # clear                                        ║
-║       xor rax, a                  # rax = [64 || n]                              ║
-║       xor rax, n                  # rax = [64 || n || n] = 64                    ║
+║       <f1><pu>xor</pu> <g>rax</g>, <g>rax</g></f1>                <f1># clear</f1>                                        ║
+║       <f1><pu>xor</pu> <g>rax</g>, <bl>a</bl></f1>                  <f1># rax = [64||n]</f1>                                ║
+║       <f1><pu>xor</pu> <g>rax</g>, <bl>n</bl></f1>                  <f1># rax = [64||n||n] = 64</f1>                        ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ This hides our 64 value, as it is xor-ed outside our logic.                      ║
+║ This hides our <bl>64</bl> value, as it is <pu>xor</pu>-ed outside our logic.                      ║
 ║                                                                                  ║
-║ We could even designate a register as a "scratch" register - load a somewhat     ║
-║ random value into it - and use that as our "n" value. so loading two values, 64  ║
-║ and 100 into memory could look like (sch = our scratch registers):               ║
+║ We could even designate a register as a "scratch register" - load a somewhat     ║
+║ random value into it - and use that as our "<bl>n</bl>" value. so loading two values, <bl>64</bl>  ║
+║ and <bl>100</bl> into memory could look like (<g>sch</g> = our scratch registers):               ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ INIT:                                                                            ║
-║       xor sch, sch                # clear                                        ║
-║       xor sch, n                  # load our "random" number into scratch        ║
+║ <y>INIT:</y>                                                                            ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                <f1># clear</f1>                                        ║
+║       <f><pu>xor</pu> <g>sch</g>, <bl>n</bl></f>                  <f1># load our "random" number into scratch</f1>        ║
 ║                                                                                  ║
-║ RETRIEVING HARDCODED VALUES:                                                     ║
-║       xor rax, rax                # clear                                        ║
-║       xor rax, [sch || 64]        # bracketed piece is calculated externally     ║
-║       xor rax, sch                # rax = [64 || n || n] = 64                    ║
+║ <y>RETRIEVING HARDCODED VALUES:</y>                                                     ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                <f1># clear</f1>                                        ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>sch</g>||<bl>64</bl>]</f>          <f1># bracketed piece is calculated externally</f1>     ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>                <f1># rax = [64||n||n] = 64</f1>                        ║
 ║                                                                                  ║
-║       xor sch, rax                # scratch: [n || 64]                           ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>rax</g></f>                <f1># scratch: [n||64]</f1>                             ║
 ║                                                                                  ║
-║       xor rbx, rbx                # clear                                        ║
-║       xor rbx, [sch || 100]       # bracketed piece is calculated externally     ║
-║       xor rbx, sch                # rbx now contains 100                         ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                <f1># clear</f1>                                        ║
+║       <f><pu>xor</pu> <g>rbx</g>, [<g>sch</g>||<bl>100</bl>]</f>         <f1># bracketed piece is calculated externally</f1>     ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>sch</g></f>                <f1># rbx now contains 100</f1>                         ║
 ║                                                                                  ║
-║       xor sch, rbx                # scratch: [n || 64 || 100]                    ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>rbx</g></f>                <f1># scratch: [n||64||100]</f1>                        ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ I am kind of sad about this as a solution, as it ruins some of the "purity" of   ║
-║ genuinely trying to do everything using xor, given that we are relying on doing  ║
-║ some non-xor calculations externally in our compiler (especially random numbers) ║
+║ genuinely trying to do everything using <pu>xor</pu>, given that we are relying on doing  ║
+║ some non-<pu>xor</pu> calculations externally in our compiler (especially random numbers) ║
 ║                                                                                  ║
 ║ Perhaps we could do this the other way round, where our scratch register         ║
-║ is an xored list of all of our constants, (say 64, 100, 80) and we retrieve the  ║
-║ value we want by xoring the list with all the constants we don’t want:           ║
+║ is an <pu>xor</pu>ed list of all of our constants, (say <bl>64</bl>, <bl>100</bl>, <bl>80</bl>) and we retrieve the  ║
+║ value we want by <pu>xor</pu>ing the list with all the constants we don’t want:           ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ INIT:                                                                            ║
-║       xor sch, sch                                                               ║
-║       xor sch, [64 || 100 || 80]  # calculated externally, as before             ║
+║ <y>INIT:</y>                                                                            ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>64</bl>||<bl>100</bl>||<bl>80</bl>]</f>      <f1># calculated externally, as before</f1>             ║
 ║                                                                                  ║
-║ RETRIEVING HARDCODED VALUES:                                                     ║
-║       xor rax, rax                                                               ║
-║       xor rax, sch                                                               ║
-║       xor rax, [100 || 80]        # rax now contains 64                          ║
+║ <y>RETRIEVING HARDCODED VALUES:</y>                                                     ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<bl>100</bl>||<bl>80</bl>]</f>          <f1># rax now contains 64</f1>                          ║
 ║                                                                                  ║
-║       xor rbx, rbx                                                               ║
-║       xor rbx, sch                                                               ║
-║       xor rbx, [64 || 80]         # rcx now contains 100                         ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rbx</g>, [<bl>64</bl>||<bl>80</bl>]</f>           <f1># rcx now contains 100</f1>                         ║
 ║                                                                                  ║
-║       xor rcx, rcx                                                               ║
-║       xor rcx, sch                                                               ║
-║       xor rcx, [100 || 64]        # rcx now contains 80                          ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, [<bl>100</bl>||<bl>64</bl>]</f>          <f1># rcx now contains 80</f1>                          ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ For the sake of obfuscation, I can live with this - at least the computational   ║
-║ work being done by our compiler is just xor.                                     ║
+║ work being done by our compiler is just <pu>xor</pu>.                                     ║
 ║                                                                                  ║
 ╠══-----==[ 3 ]==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Here we run into our first (and pretty thorny issue), how do we manage a         ║
 ║ conditional statement?                                                           ║
 ║                                                                                  ║
-║ lets clarify here, I don't just mean any conditional - I mean a general purpose  ║
-║ conditional. Of course, xor is "conditional" in its own way:                     ║
+║ Lets clarify here, I don't just mean any conditional - I mean a general purpose  ║
+║ conditional. Of course, <pu>xor</pu> is "conditional" in its own way:                     ║
 ║                                                                                  ║
-║ For values of (a and b) between (0 -> 1):                                        ║
+║ For values of (<bl>a</bl> and <bl>b</bl>) between (<bl>0</bl> <f1>-></f1> <bl>1</bl>):                                        ║
 ║                                                                                  ║
-║       a xor b = 1 or 0                                                           ║
+║       <f><bl>a</bl> <pu>xor</pu> <bl>b</bl> = <bl>1</bl> or <bl>0</bl></f>                                                           ║
 ║                                                                                  ║
-║ There are "conditions" (a and b values) of a xor b that yield 1, and conditions  ║
-║ that yield 0. Our issue is that there are multiple conditions that satisfy this  ║
-║ we want just one                                                                 ║
+║ There are "conditions" (<bl>a</bl> and <bl>b</bl> values) of <bl>a</bl> <pu>xor</pu> <bl>b</bl> that yield <bl>1</bl>, and conditions  ║
+║ that yield <bl>0</bl>. Our issue is that there are multiple conditions that satisfy this  ║
+║                                                                                  ║
+║ We want just one                                                                 ║
 ║                                                                                  ║
 ║ Lets try making a "detect if two registers are equal" function                   ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       let rax be the first register we want to compare                           ║
+║       <f1># let rax be the first register we want to compare</f1>                         ║
 ║                                                                                  ║
-║       let rcx be the second register we want to compare                          ║
+║       <f1># let rcx be the second register we want to compare</f1>                        ║
 ║                                                                                  ║
-║       let inv be a register filled with 1s (invert register)                     ║
+║       <f1># let <g>inv</g> be a register filled with 1s (invert register)</f1>                   ║
 ║                                                                                  ║
-║       xor sc1, sc1                                                               ║
-║       xor sc1, rax            # copy rax into sc1                                ║
+║       <f><pu>xor</pu> <g>sc1</g>, <g>sc1</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sc1</g>, <g>rax</g></f>            <f1># copy rax into sc1</f1>                                ║
 ║                                                                                  ║
-║       xor sc2, sc2                                                               ║
-║       xor sc2, rcx            # copy rcx into sc2                                ║
+║       <f><pu>xor</pu> <g>sc2</g>, <g>sc2</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sc2</g>, <g>rcx</g></f>            <f1># copy rcx into sc2</f1>                                ║
 ║                                                                                  ║
-║       xor rcx, inv            # inverts the bits of rcx                          ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>inv</g></f>            <f1># inverts the bits of rcx</f1>                          ║
 ║                                                                                  ║
-║       xor rax, rcx            # xors the inverted rcx with rax                   ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rcx</g></f>            <f1># xors the inverted rcx with rax</f1>                   ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ This would yield all 1s in rax, if rax and rcx were equal - and something else   ║
+║ This would yield all <bl>1</bl>s in <g>rax</g>, if <g>rax</g> and <g>rcx</g> were equal - and something else   ║
 ║ if not. unfortunately this still isn't great, as the "failure" condition isn't   ║
-║ reliable (any combination of 1s and at least one 0)                              ║
+║ reliable (any combination of <bl>1</bl>s and at least one <bl>0</bl>)                              ║
 ║                                                                                  ║
 ║ Turns out we can do some trickery with addressing, as if two registers contain   ║
 ║ the same value then operating on the values contained at those addresses can     ║
 ║ act as a test for whether they are the same or not:                              ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       we have registers rdx and rcx (which contain some values)                  ║
+║       <f1># we have registers rdx and rcx (which contain some values)</f1>                ║
 ║                                                                                  ║
-║       xor [rdx], 0x00         # memory at rdx now contains 0                     ║
+║       <f><pu>xor</pu> [<g>rdx</g>], <bl>0x00</bl></f>         <f1># memory at rdx now contains 0</f1>                     ║
 ║                                                                                  ║
-║       xor [rcx], 0x01         # memory at rcx now contains 1                     ║
+║       <f><pu>xor</pu> [<g>rcx</g>], <bl>0x01</bl></f>         <f1># memory at rcx now contains 1</f1>                     ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, [rdx]          # move the memory at our first write into rax      ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rdx</g>]</f>          <f1># move the memory at our first write into rax</f1>      ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ The trick here is that if rdx and rcx are the same - then the 0 was overwritten  ║
-║ by a 1, and if not - it remained a 0. This stores the value 1 in rax if both of  ║
+║ The trick here is that if <g>rdx</g> and <g>rcx</g> are the same - then the 0 was overwritten  ║
+║ by a 1, and if not - it remained a 0. This stores the value 1 in <g>rax</g> if both of  ║
 ║ our registers were the same, and 0 if they were different                        ║
 ║                                                                                  ║
 ║ Amusingly, I started to do a bunch of other stuff that relied on the above being ║
@@ -325,120 +326,120 @@ a:focus {
 ║                                                                                  ║
 ║ Lets fix it now, the problem is that when we:                                    ║
 ║                                                                                  ║
-║       xor [rdx], 0x00                                                            ║
+║       <f><pu>xor</pu> [<g>rdx</g>], <bl>0x00</bl></f>                                                            ║
 ║                                                                                  ║
-║ This actually does nothing, as a xor 0 = a. Okay, eaxy fix then - just xor [rdx] ║
+║ This actually does nothing, as <bl>a</bl> <pu>xor</pu> <bl>0</bl> = <bl>a</bl>. Okay, eaxy fix then - just <f><pu>xor</pu> [<g>rdx</g>]</f> ║
 ║ with itself to make sure the memory address located at the value pointed to by   ║
-║ rdx is 0. However, the intel manual has something to say about this:             ║
+║ <g>rdx</g> is <bl>0</bl>. However, the intel manual has something to say about this:             ║
 ║                                                                                  ║
-║ Two memory operands cannot be used in one instruction                            ║
+║ <f>"Two memory operands cannot be used in one instruction"</f>                          ║
 ║                                                                                  ║
 ║ So we can't do the intuitive:                                                    ║
 ║                                                                                  ║
-║       xor [rdx], [rdx]                                                           ║
+║       <f><pu>xor</pu> [<g>rdx</g>], [<g>rdx</g>]</f>                                                           ║
 ║                                                                                  ║
-║ Instead we have to "realise" [rdx] to a scratch register, and then do it from    ║
+║ Instead we have to "realise" <f>[<g>rdx</g>]</f>  to a scratch register, and then do it from   ║
 ║ there:                                                                           ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       xor sch, sch                                                               ║
-║       xor sch, [rdx]          # loads the memory at address rdx into sch         ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rdx</g>]</f>          <f1># loads the memory at address rdx into sch</f1>         ║
 ║                                                                                  ║
-║       xor [rdx], sch          # zeros out the memory at rdx                      ║
+║       <f><pu>xor</pu> [<g>rdx</g>], <g>sch</g></f>          <f1># zeros out the memory at rdx</f1>                      ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Which gives us the actually functional comparison for if two values are equal,   ║
-║ where rax == 1 if rdx and rcx are equal, and rax == 0 if they are not:           ║
+║ where <g>rax</g> == <bl>1</bl> if <g>rdx</g> and <g>rcx</g> are equal, and <g>rax</g> == <bl>0</bl> if they are not:           ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       we have registers rdx and rcx (which contain some values)                  ║
+║       <f1># we have registers rdx and rcx (which contain some values)</f1>                ║
 ║                                                                                  ║
-║       xor sch, sch                                                               ║
-║       xor sch, [rdx]                                                             ║
-║       xor [rdx], sch          # memory at rdx now contains 0                     ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rdx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rdx</g>], <g>sch</g></f>          <f1># memory at rdx now contains 0</f1>                     ║
 ║                                                                                  ║
-║       xor sch, sch                                                               ║
-║       xor sch, [rcx]                                                             ║
-║       xor [rcx], sch          # memory at rcx now contains 0                     ║
-║       xor [rcx], 0x1          # memory at rcx now contains 1                     ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rcx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rcx</g>], <g>sch</g></f>          <f1># memory at rcx now contains 0</f1>                     ║
+║       <f><pu>xor</pu> [<g>rcx</g>], <bl>0x1</bl></f>          <f1># memory at rcx now contains 1</f1>                     ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, [rdx]          # move the memory at our first write into rax      ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rdx</g>]</f>          <f1># move the memory at our first write into rax</f1>      ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ We can rephrase this for comparison to any "n" aswell:                           ║
+║ We can rephrase this for comparison to any "<bl>n</bl>" aswell:                           ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       xor sch, sch                                                               ║
-║       xor sch, [rbx]                                                             ║
-║       xor [rbx], sch                                                             ║
-║       xor [rbx], 0x0          # memory at rbx now contains 0                     ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rbx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rbx</g>], <g>sch</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>rbx</g>], <bl>0x00</bl></f>          <f1># memory at rbx now contains 0</f1>                    ║
 ║                                                                                  ║
-║       xor sch, sch                                                               ║
-║       xor sch, [n]                                                               ║
-║       xor [n], sch                                                               ║
-║       xor [n], 0x1            # memory at n now contains 1                       ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>n</bl>]</f>                                                               ║
+║       <f><pu>xor</pu> [<bl>n</bl>], <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> [<bl>n</bl>], <bl>0x01</bl></f>            <f1># memory at n now contains 1</f1>                      ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, [rbx]          # if rbx == n, rax == 1 else 0                     ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rbx</g>]</f>           <f1># if rbx == n, rax == 1 else 0</f1>                    ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-║ Here we are checking the memory at the address pointed to by [n] which I imagine ║
-║ would often crash my program (especially for n == 0 checks) - that’s a problem   ║
-║ for future CWW to work out :)                                                    ║
+║ Here we are checking the memory at the address pointed to by <f>[<bl>n</bl>]</f> which I imagine ║
+║ would often crash my program (especially for <bl>n</bl> == <bl>0</bl> checks) - that’s a problem   ║
+║ for future <r>CWW</r> to work out :)                                                    ║
 ║                                                                                  ║
 ║ Theoretically though, this works as a comparison statement, but how do we "do"   ║
-║ something based on rax == 1 or 0?                                                ║
+║ something based on <g>rax</g> == <bl>1</bl> or <bl>0</bl>?                                                ║
 ║                                                                                  ║
-║ We can place our values to "choose" from into two spots in memory (a and b) we   ║
-║ then can use our 1 or 0 value to select between them:                            ║
+║ We can place our values to "choose" from into two spots in memory (<bl>a</bl> and <bl>b</bl>) we   ║
+║ then can use our <bl>1</bl> or <bl>0</bl> value to select between them:                            ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║ VALUE A:                                                                         ║
-║       xor rcx, rcx                                                               ║
-║       xor rcx, a                                                                 ║
+║ <y>VALUE A:</y>                                                                         ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <bl>a</bl></f>                                                                 ║
 ║                                                                                  ║
-║ VALUE B:                                                                         ║
-║       xor rdx, rdx                                                               ║
-║       xor rdx, b                                                                 ║
+║ <y>VALUE B:</y>                                                                         ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdx</g>, <bl>b</bl></f>                                                                 ║
 ║                                                                                  ║
-║ COMPARISON OF RBX TO N:                                                          ║
-║       xor sch, sch                                                               ║
-║       xor sch, [rbx]                                                             ║
-║       xor [rbx], sch                                                             ║
-║       xor [rbx], 0x0          # memory at rbx now contains 0                     ║
+║ <y>COMPARISON OF RBX TO N:</y>                                                          ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rbx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rbx</g>], <g>sch</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>rbx</g>], <bl>0x00</bl></f>         <f1># memory at rbx now contains 0</f1>                     ║
 ║                                                                                  ║
-║       xor sch, sch                                                               ║
-║       xor sch, [n]                                                               ║
-║       xor [n], sch                                                               ║
-║       xor [n], 0x1            # memory at n now contains 1                       ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>n</bl>]</f>                                                               ║
+║       <f><pu>xor</pu> [<bl>n</bl>], <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> [<bl>n</bl>], <bl>0x01</bl></f>           <f1># memory at n now contains 1</f1>                       ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, [rbx]          # if rbx == n, rax == 1 else 0                     ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rbx</g>]</f>          <f1># if rbx == n, rax == 1 else 0</f1>                     ║
 ║                                                                                  ║
-║ LOOKUP INDEXED FROM X ONWARDS:                                                   ║
-║       xor sch, sch                                                               ║
-║       xor sch, [X]                                                               ║
-║       xor [X], sch            # memory at X now contains 0                       ║
+║ <y>LOOKUP INDEXED FROM X ONWARDS:</y>                                                   ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>X</bl>]</f>                                                               ║
+║       <f><pu>xor</pu> [<bl>X</bl>], <g>sch</g></f>            <f1># memory at X now contains 0</f1>                       ║
 ║                                                                                  ║
-║       xor sch, sch                                                               ║
-║       xor sch, [X+1]                                                             ║
-║       xor [X+1], sch          # memory at X+1 now contains 0                     ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>X</bl>+<bl>1</bl>]</f>                                                             ║
+║       <f><pu>xor</pu> [<bl>X</bl>+<bl>1</bl>], <g>sch</g></f>          <f1># memory at X+1 now contains 0</f1>                     ║
 ║                                                                                  ║
-║       xor [X], a              # memory at X now contains a                       ║
+║       <f><pu>xor</pu> [<bl>X</bl>], <bl>a</bl></f>              <f1># memory at X now contains a</f1>                       ║
 ║                                                                                  ║
-║       xor [X+1], b            # memory at X+1 now contains b                     ║
+║       <f><pu>xor</pu> [<bl>X</bl>+<bl>1</bl>], <bl>b</bl></f>            <f1># memory at X+1 now contains b</f1>                     ║
 ║                                                                                  ║
-║       add X, rax              # ummmm is that an add instruction...              ║
+║       <f><r>add</r> <bl>X</bl>, <g>rax</g></f>              <f1># ummmm is that an add instruction...</f1>              ║
 ║                                                                                  ║
-║       xor rax, rax                                                               ║
-║       xor rax, [X]            # rax contains a or b                              ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<bl>X</bl>]</f>            <f1># rax contains a or b</f1>                              ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ╠══-----==[ 4 ]==----------------------------------------------------------------══╣
 ║                                                                                  ║
-║ Can you see it too? there is a single add instruction in our comparison block    ║
-║ which kinda ruins the whole xor only thing...                                    ║
+║ Can you see it too? there is a single <r>add</r> instruction in our comparison block    ║
+║ which kinda ruins the whole <pu>xor</pu> only thing...                                    ║
 ║                                                                                  ║
 ║ This is a thorny issue it seems, cause we are trying to make conditionals - but  ║
 ║ we (here I mean just me) can't without a single add instruction, but most ways   ║
@@ -446,79 +447,79 @@ a:focus {
 ║                                                                                  ║
 ║ Lets take a look at the logic for addition of single binary digits:              ║
 ║                                                                                  ║
-║ number 1   number 2   output                                                     ║
-║   01         01   ->    10                                                       ║
-║   00         01   ->    01                                                       ║
-║   01         00   ->	01                                                         ║
-║   00         00   ->	00                                                         ║
+║ <f>number <bl>1</bl>   number <bl>2</bl>   output</f>                                                     ║
+║   <bl>01         01   <f1>-></f1>    10</bl>                                                       ║
+║   <bl>00         01   <f1>-></f1>    01</bl>                                                       ║
+║   <bl>01         00   <f1>-></f1>    01</bl>                                                       ║
+║   <bl>00         00   <f1>-></f1>    00</bl>                                                       ║
 ║                                                                                  ║
-║ Hey, that’s familiar - the second column is just the xor truth table from before.║
-║ We can't just replace addition with xor though, as when the 0ths places both are ║
-║ 1s, then the 1ths place becomes a 1. xor is addition mod(2) - or addition of     ║
-║ GF(2)                                                                            ║
+║ Hey, that’s familiar - the second column is just the <pu>xor</pu> truth table from before.║
+║ We can't just replace addition with <pu>xor</pu> though, as when the <bl>0</bl>ths places both are ║
+║ <bl>1</bl>s, then the  <bl>1</bl>ths place becomes a  <bl>1</bl>. <pu>xor</pu> is addition <o>mod<f>(<bl>2</bl>)</f></o> - or addition of   ║
+║ <o>GF<f>(<bl>2</bl>)</f></o>                                                                            ║
 ║                                                                                  ║
-║ In a binary adder circuit this is done through a combination of and/or logic     ║
+║ In a binary adder circuit this is done through a combination of <pu>and</pu>/<pu>or</pu> logic     ║
 ║ gates (this video on computing from first logic principles is great). So can we  ║            seb lange video link
-║ create and/or logic operations using just xor?                                   ║
+║ create <pu>and</pu>/<pu>or</pu> logic operations using just <pu>xor</pu>?                                   ║
 ║                                                                                  ║
 ╠══-----==[ 5 ]==----------------------------------------------------------------══╣
 ║                                                                                  ║
-║ We can make a not logical operation by reusing our inversion trick from the      ║
+║ We can make a <pu>not</pu> logical operation by reusing our inversion trick from the      ║
 ║ first failed comparison example. This will probably be useful in future          ║
-║ operations so we will assign a register to this value (inv = invert register):   ║
+║ operations so we will assign a register to this value (<g>inv</g> = invert register):   ║
 ║                                                                                  ║
-║       xor inv, inv                                                               ║
-║       xor inv, 0xffffffffffffffff                                                ║
+║       <f><pu>xor</pu> <g>inv</g>, <g>inv</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>inv</g>, <bl>0xffffffffffffffff</bl></f>                                                ║
 ║                                                                                  ║
 ║ After many days of trying to work out what on earth I'm doing in boolean algebra ║
-║ it turns out (I think?) that a combination of xor/not cannot produce or/and      ║
+║ it turns out (I think?) that a combination of <pu>xor</pu>/<pu>not</pu> cannot produce or/and      ║
 ║ :(                                                                               ║
 ║                                                                                  ║
-║ The hope was that as xor has two alternative forms:                              ║
+║ The hope was that as <pu>xor</pu> has two alternative forms:                              ║
 ║                                                                                  ║
-║ -> disjunctive -> (a & ¬b) | (¬a & b)                                            ║
-║ -> conjunctive -> (a | b) & (¬a | ¬b)                                            ║
+║ <f1>-></f1> disjunctive <f1>-></f1> <f>(<bl>a</bl> & ¬<bl>b</bl>) | (¬<bl>a</bl> & <bl>b</bl>)</f>                                            ║
+║ <f1>-></f1> conjunctive <f1>-></f1> <f>(<bl>a</bl> | <bl>b</bl>) & (¬<bl>a</bl> | ¬<bl>b</bl>)</f>                                            ║
 ║                                                                                  ║
 ║ And that we can swap or/and operations (DeMorgan strikes again):                 ║
 ║                                                                                  ║
-║ -> ¬(a & b) = ¬a|¬b                                                              ║
-║ -> ¬(a & b) = ¬a | ¬b                                                            ║
+║ <f1>-></f1> <f>¬(<bl>a</bl> & <bl>b</bl>) = ¬<bl>a</bl>|¬<bl>b</bl></f>                                                              ║
+║ <f1>-></f1> <f>¬(<bl>a</bl> & <bl>b</bl>) = ¬<bl>a</bl> | ¬<bl>b</bl></f>                                                            ║
 ║                                                                                  ║
-║ There might be some sort of equation manipulation we could do to get (a & b) on  ║
-║ one side, and just xor/not on the other, but it doesn't seem possible.           ║
+║ There might be some sort of equation manipulation we could do to get (<bl>a</bl> & <bl>b</bl>) on  ║
+║ one side, and just <pu>xor</pu>/<pu>not</pu> on the other, but it doesn't seem possible.           ║
 ║                                                                                  ║
-║ My tentative reason for this assumption is that every combination of xor/not can ║
-║ be expressed as the following (as repeated xor cancels):                         ║
+║ My tentative reason for this assumption is that every combination of <pu>xor</pu>/<pu>not</pu> can ║
+║ be expressed as the following (as repeated <pu>xor</pu> cancels):                         ║
 ║                                                                                  ║
-║       for some constants: x, y, z e{0,1}                                         ║
-║       f(a, b) = x || (y . a) || (z . b)                                          ║
+║       <f1>for some constants:</f1> <f><bl>x</bl>, <bl>y</bl>, <bl>z</bl> <bl>e</bl>{<bl>0</bl>,<bl>1</bl>}:</f>                                        ║
+║       <f>f(<bl>a</bl>, <bl>b</bl>) = <bl>x</bl> || (<bl>y</bl> & <bl>a</bl>) || (<bl>z</bl> & <bl>b</bl>)</f>                                          ║
 ║                                                                                  ║
-║ So we have three constants, that can be either 1 or 0 for f(a, b):               ║
+║ So we have three constants, that can be either <bl>1</bl> or <bl>0</bl> for <f><bl>f</bl>(<bl>a</bl>, <bl>b</bl>)</f>:               ║
 ║                                                                                  ║
-║ xyz     f(0,0)     f(0,1)     f(1,0)     f(1,1)     reduces to...                ║
+║ <f><bl>xyz</bl>     <bl>f</bl>(<bl>0</bl>,<bl>0</bl>)     <bl>f</bl>(<bl>0</bl>,<bl>1</bl>)     <bl>f</bl>(<bl>1</bl>,<bl>0</bl>)     <bl>f</bl>(<bl>1</bl>,<bl>1</bl>)     reduces to...</f>                ║
 ║                                                                                  ║
-║ 000     0          0          0          0          constant 0                   ║
-║ 100     1          1          1          1          constant 1                   ║
-║ 010     0          0          1          1          a                            ║
-║ 001     0          1          0          1          b                            ║
-║ 110     1          1          0          0          not a                        ║
-║ 011     0          1          1          0          a || b                       ║
-║ 101     1          0          1          0          not b                        ║
-║ 111     1          0          0          1          not (a || b)                 ║
+║ <bl>000     0          0          0          0          <f1>constant</f1> 0</bl>                   ║
+║ <bl>100     1          1          1          1          <f1>constant</f1> 1</bl>                   ║
+║ <bl>010     0          0          1          1          a</bl>                            ║
+║ <bl>001     0          1          0          1          b</bl>                            ║
+║ <bl>110     1          1          0          0          <f1>not a</bl>                        ║
+║ <bl>011     0          1          1          0          a <f1>||</f1> b</bl>                       ║
+║ <bl>101     1          0          1          0          <f1>not</f1> b</bl>                        ║
+║ <bl>111     1          0          0          1          <f1>not</f1> <f1>(</f1>a <f1>||</f1> b<f1>)</f1></bl>                 ║
 ║                                                                                  ║
-║ There is no way to detect two 1s - so we can't make an or/and operation (even    ║
-║ though xor "contains" them through their alternative forms. Big sad.             ║
+║ There is no way to detect two <bl>1</bl>s - so we can't make an <pu>and</pu>/<pu>or</pu> operation (even    ║
+║ though <pu>xor</pu> "contains" them through their alternative forms. Big sad.             ║
 ║                                                                                  ║
 ║ Despite currently being stuck, I'm pretty happy with the direction this is going ║
 ║  - we are starting to generate some pretty unpleasant looking assembly code,     ║
 ║ though I worry I've bitten off a little more than one meagre student can handle. ║
 ║ Time will tell                                                                   ║
 ║                                                                                  ║
-║ CWW out                                                                          ║
+║ <r>CWW out</r>                                                                          ║
 ║                                                                                  ║
-║ PS. I now know about the M/o/Vfuscator, but I'd prefer to see how far I can go   ║
-║ myself before seeing how they implemented solutions to the problems I'm          ║
-║ encountering.                                                                    ║
+║ <f1>PS. I now know about the M/o/Vfuscator, but I'd prefer to see how far I can go</f1>   ║
+║ <f1>myself before seeing how they implemented solutions to the problems I'm</f1>          ║
+║ <f1>encountering.</f1>                                                                    ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 </pre>
 </body>
