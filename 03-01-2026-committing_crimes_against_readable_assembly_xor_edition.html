@@ -1,53 +1,14 @@
- <!DOCTYPE html>
-<html lang="en">
 <head>
-<meta charset="UTF-8">
-
-<style>
-@font-face {
-  font-family: "UnifontExMono";
-  src: url("UnifontExMono.woff2") format("woff2");
-}
-
-body {
-  color: white;
-  background-color: #0A0B11;
-  margin: 0;
-}
-
-pre {
-  font-family: "UnifontExMono", monospace;
-  font-size: 18px;
-  line-height: 1;
-  padding-left: 40px;
-  white-space: pre;
-}
-
-/* close to the gruvbox format */
-w  { color: white; }
-r  { color: #FB4934; } /* red */
-g  { color: #B8BB26; } /* green */
-y  { color: #FABD2F; } /* yellow */
-bl { color: #83A598; } /* blue */
-pu { color: #D3869B; } /* purple */
-
-o  { color: #FE8019; } /* orange */
-f  { color: #EBDBB2; } /* muted white */
-f1 { color: #78788C; } /* background grey */
-
-a,
-a:visited,
-a:active,
-a:hover,
-a:focus {
-  color: #689D6A;
-  text-decoration: none;
-}
-</style>
-
+  <meta charset="utf-8">
+  <title>CWW.committing crimes against readable assembly part 2, only xor</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<pre>
+<div style="display: inline-block; text-align: left;"><pre>
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
 ╔══════════════════════════════════════════════════════════════════════════════════╗<a href="link">here</a>
 ║ <bl>Contents - 03-01-2026 committing crimes against readable assembly part 2, only</bl>   ║
 ║ <bl>xor?</bl>                                                                             ║
@@ -153,7 +114,7 @@ a:focus {
 ║ <f1>-></f1> 4 basic arithmetic                                                            ║
 ║ <f1>-></f1> 5 basic logic                                                                 ║
 ║                                                                                  ║
-╠══-----==[ 1 ]==----------------------------------------------------------------══╣
+╠══-----==<o>[ 1 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║	
 ║ Our first objective is pretty easy, if a number <bl>x</bl> is <pu>xor</pu>ed with itself, it       ║
 ║ always yields <bl>0</bl>                                                                  ║
@@ -166,7 +127,7 @@ a:focus {
 ║                                                                                  ║
 ║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
 ║                                                                                  ║
-╠══-----==[ 2 ]==----------------------------------------------------------------══╣
+╠══-----==<o>[ 2 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Loading values into registers is where we have our first couple of decisions to  ║
 ║ make                                                                             ║
@@ -260,7 +221,7 @@ a:focus {
 ║ For the sake of obfuscation, I can live with this - at least the computational   ║
 ║ work being done by our compiler is just <pu>xor</pu>.                                     ║
 ║                                                                                  ║
-╠══-----==[ 3 ]==----------------------------------------------------------------══╣
+╠══-----==<o>[ 3 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Here we run into our first (and pretty thorny issue), how do we manage a         ║
 ║ conditional statement?                                                           ║
@@ -436,7 +397,7 @@ a:focus {
 ║       <f><pu>xor</pu> <g>rax</g>, [<bl>X</bl>]</f>            <f1># rax contains a or b</f1>                              ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
-╠══-----==[ 4 ]==----------------------------------------------------------------══╣
+╠══-----==<o>[ 4 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Can you see it too? there is a single <r>add</r> instruction in our comparison block    ║
 ║ which kinda ruins the whole <pu>xor</pu> only thing...                                    ║
@@ -462,7 +423,7 @@ a:focus {
 ║ gates (<a href="https://www.youtube.com/watch?v=QZwneRb-zqA&list=PLFt_AvWsXl0dPhqVsKt1Ni_46ARyiCGSq">this</a> video on computing from first logic principles is great). So can we  ║
 ║ create <pu>and</pu>/<pu>or</pu> logic operations using just <pu>xor</pu>?                                   ║
 ║                                                                                  ║
-╠══-----==[ 5 ]==----------------------------------------------------------------══╣
+╠══-----==<o>[ 5 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ We can make a <pu>not</pu> logical operation by reusing our inversion trick from the      ║
 ║ first failed comparison example. This will probably be useful in future          ║
@@ -521,6 +482,7 @@ a:focus {
 ║ <f1>myself before seeing how they implemented solutions to the problems I'm</f1>          ║
 ║ <f1>encountering.</f1>                                                                    ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
 </pre>
-</body>
-</html>
