@@ -32,27 +32,27 @@
 ║ Here is the list of assembly instructions, in order of usage in some popular     ║
 ║ opensource programs (from <a href="https://www.strchr.com/x86_machine_code_statistics">here</a>):                                                 ║
 ║                                                                                  ║
-║         <pu>mov</pu>                       <f1># 35%</f1>                                          ║
-║         <pu>push</pu>                      <f1># 10%</f1>                                          ║
-║         <pu>call</pu>                      <f1># 6%</f1>                                           ║
-║         <pu>cmp</pu>                       <f1># 5%</f1>                                           ║
-║         <pu>add</pu>                       <f1># 4%</f1>                                           ║
-║         <pu>pop</pu>                       <f1># 4%</f1>                                           ║
-║         <pu>lea</pu>                       <f1># 4%</f1>                                           ║
-║         <pu>test</pu>                      <f1># 3%</f1>                                           ║
-║         <pu>je</pu>                        <f1># 3%</f1>                                           ║
-║         <pu><pu>xor</pu></pu>                       <f1># 2%</f1>                                           ║
-║         <pu>jmp</pu>                       <f1># 2%</f1>                                           ║
-║         <pu>jne</pu>                       <f1># 2%</f1>                                           ║
-║         <pu>ret</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>inc</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>sub</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>fld</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>and</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>fstp</pu>                      <f1># 1%</f1>                                           ║
-║         <pu>shl</pu>                       <f1># 1%</f1>                                           ║
-║         <pu>or</pu>                        <f1># 1%</f1>                                           ║
-║         <f>others</f>                    <f1># 11%</f1>                                          ║
+║         <pu>mov</pu>                   <f1># 35%</f1>                                              ║
+║         <pu>push</pu>                  <f1># 10%</f1>                                              ║
+║         <pu>call</pu>                  <f1># 6%</f1>                                               ║
+║         <pu>cmp</pu>                   <f1># 5%</f1>                                               ║
+║         <pu>add</pu>                   <f1># 4%</f1>                                               ║
+║         <pu>pop</pu>                   <f1># 4%</f1>                                               ║
+║         <pu>lea</pu>                   <f1># 4%</f1>                                               ║
+║         <pu>test</pu>                  <f1># 3%</f1>                                               ║
+║         <pu>je</pu>                    <f1># 3%</f1>                                               ║
+║         <pu>xor</pu>                   <f1># 2%</f1>                                               ║
+║         <pu>jmp</pu>                   <f1># 2%</f1>                                               ║
+║         <pu>jne</pu>                   <f1># 2%</f1>                                               ║
+║         <pu>ret</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>inc</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>sub</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>fld</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>and</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>fstp</pu>                  <f1># 1%</f1>                                               ║
+║         <pu>shl</pu>                   <f1># 1%</f1>                                               ║
+║         <pu>or</pu>                    <f1># 1%</f1>                                               ║
+║         <f>others</f>                <f1># 11%</f1>                                              ║
 ║                                                                                  ║
 ║ As a realistic aim, lets rule out some assembly instructions that I think might  ║
 ║ be either pretty tricky, or just require abstraction after we handle the more    ║
@@ -161,9 +161,9 @@
 ║ <bl>64</bl> <pu>xor</pu> <bl>n</bl> = <bl>a</bl>:                                                                    ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║       <f1><pu>xor</pu> <g>rax</g>, <g>rax</g></f1>                <f1># clear</f1>                                        ║
-║       <f1><pu>xor</pu> <g>rax</g>, <bl>a</bl></f1>                  <f1># rax = [64||n]</f1>                                ║
-║       <f1><pu>xor</pu> <g>rax</g>, <bl>n</bl></f1>                  <f1># rax = [64||n||n] = 64</f1>                        ║
+║       <f1><pu>xor</pu> <g>rax</g>, <g>rax</g></f1>            <f1># clear</f1>                                            ║
+║       <f1><pu>xor</pu> <g>rax</g>, <bl>a</bl></f1>              <f1># rax = [64||n]</f1>                                    ║
+║       <f1><pu>xor</pu> <g>rax</g>, <bl>n</bl></f1>              <f1># rax = [64||n||n] = 64</f1>                            ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ This hides our <bl>64</bl> value, as it is <pu>xor</pu>-ed outside our logic.                      ║
@@ -174,21 +174,21 @@
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
 ║ <y>INIT:</y>                                                                            ║
-║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                <f1># clear</f1>                                        ║
-║       <f><pu>xor</pu> <g>sch</g>, <bl>n</bl></f>                  <f1># load our "random" number into scratch</f1>        ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>            <f1># clear</f1>                                            ║
+║       <f><pu>xor</pu> <g>sch</g>, <bl>n</bl></f>              <f1># load our "random" number into scratch</f1>            ║
 ║                                                                                  ║
 ║ <y>RETRIEVING HARDCODED VALUES:</y>                                                     ║
-║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                <f1># clear</f1>                                        ║
-║       <f><pu>xor</pu> <g>rax</g>, [<g>sch</g>||<bl>64</bl>]</f>          <f1># bracketed piece is calculated externally</f1>     ║
-║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>                <f1># rax = [64||n||n] = 64</f1>                        ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>            <f1># clear</f1>                                            ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>sch</g>||<bl>64</bl>]</f>      <f1># bracketed piece is calculated externally</f1>         ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>            <f1># rax = [64||n||n] = 64</f1>                            ║
 ║                                                                                  ║
-║       <f><pu>xor</pu> <g>sch</g>, <g>rax</g></f>                <f1># scratch: [n||64]</f1>                             ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>rax</g></f>            <f1># scratch: [n||64]</f1>                                 ║
 ║                                                                                  ║
-║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                <f1># clear</f1>                                        ║
-║       <f><pu>xor</pu> <g>rbx</g>, [<g>sch</g>||<bl>100</bl>]</f>         <f1># bracketed piece is calculated externally</f1>     ║
-║       <f><pu>xor</pu> <g>rbx</g>, <g>sch</g></f>                <f1># rbx now contains 100</f1>                         ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>            <f1># clear</f1>                                            ║
+║       <f><pu>xor</pu> <g>rbx</g>, [<g>sch</g>||<bl>100</bl>]</f>     <f1># bracketed piece is calculated externally</f1>         ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>sch</g></f>            <f1># rbx now contains 100</f1>                             ║
 ║                                                                                  ║
-║       <f><pu>xor</pu> <g>sch</g>, <g>rbx</g></f>                <f1># scratch: [n||64||100]</f1>                        ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>rbx</g></f>            <f1># scratch: [n||64||100]</f1>                            ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ I am kind of sad about this as a solution, as it ruins some of the "purity" of   ║
@@ -202,20 +202,20 @@
 ╠══------------------------------------------------------------------------------══╣
 ║ <y>INIT:</y>                                                                            ║
 ║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>sch</g>, [<bl>64</bl>||<bl>100</bl>||<bl>80</bl>]</f>      <f1># calculated externally, as before</f1>             ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>64</bl>||<bl>100</bl>||<bl>80</bl>]</f>  <f1># calculated externally, as before</f1>                 ║
 ║                                                                                  ║
 ║ <y>RETRIEVING HARDCODED VALUES:</y>                                                     ║
 ║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rax</g>, [<bl>100</bl>||<bl>80</bl>]</f>          <f1># rax now contains 64</f1>                          ║
+║       <f><pu>xor</pu> <g>rax</g>, [<bl>100</bl>||<bl>80</bl>]</f>      <f1># rax now contains 64</f1>                              ║
 ║                                                                                  ║
 ║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>rbx</g>, <g>sch</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rbx</g>, [<bl>64</bl>||<bl>80</bl>]</f>           <f1># rcx now contains 100</f1>                         ║
+║       <f><pu>xor</pu> <g>rbx</g>, [<bl>64</bl>||<bl>80</bl>]</f>       <f1># rcx now contains 100</f1>                             ║
 ║                                                                                  ║
 ║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>rcx</g>, <g>sch</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rcx</g>, [<bl>100</bl>||<bl>64</bl>]</f>          <f1># rcx now contains 80</f1>                          ║
+║       <f><pu>xor</pu> <g>rcx</g>, [<bl>100</bl>||<bl>64</bl>]</f>      <f1># rcx now contains 80</f1>                              ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ For the sake of obfuscation, I can live with this - at least the computational   ║
