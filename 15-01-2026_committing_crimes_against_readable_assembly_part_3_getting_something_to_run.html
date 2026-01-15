@@ -1,0 +1,523 @@
+<head>
+  <meta charset="utf-8">
+  <title>CWW/blog/CCARA_Part_3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div style="display: inline-block; text-align: left;"><pre>
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║ <f1>15-01-2026</f1>                                                                       ║
+║ <bl>Committing Crimes Against Readable Assembly Part 3</bl>                               ║
+║                                                                                  ║
+║ <bl>Getting Something to Run</bl>                                                         ║
+║                                                                                  ║
+╠══-----==[ Contents ]==---------------------------------------------------------══╣
+║                                                                                  ║
+║ <o>1:</o> <y>the challenge</y>                                                                 ║
+║ <o>2:</o> <y>bugs</y>                                                                          ║
+║   <o>a:</o> <y>indeterminate size arguments</y>                                                ║
+║   <o>b:</o> <y>protected segments of memory</y>                                                ║
+║   <o>c:</o> <y>dealing with >32 bit numbers using xor</y>                                      ║
+║   <o>d:</o> <y>wrong registers</y>                                                             ║
+║   <o>e:</o> <y>addressing mistakes with indices</y>                                            ║
+║   <o>f:</o> <y>I made a program where 0000 is valid bytecode...</y>                            ║
+║ <o>3:</o> <y>a small summary</y>                                                               ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════════╗
+╠══-----==<o>[ 1 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Let's write some silly code                                                      ║
+║                                                                                  ║
+║ We theoretically have the ability to do non-branching conditionals, so let's set ║
+║ ourselves a challenge - can I make a simple <pu>xor</pu>-only assembly program that       ║
+║ actually compiles?                                                               ║
+║                                                                                  ║
+║ As there are lots of moving parts, for my own sanity I'm going to refer to some  ║
+║ <pu>xor</pu> constructs by their abbreviated name, rather than the full list of           ║
+║ instructions that make them up. So, for example:                                 ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <bl>a</bl></f>                                                                 ║
+║                                                                                  ║
+║ Can be represented by the shorthand:                                             ║
+║                                                                                  ║
+║       <f><pu>xmov</pu> <g>rax</g>, <bl>a</bl></f>                                                                ║
+║                                                                                  ║
+║ Similarly, for setting memory at a specific location pointed to by a register:   ║
+║ (<g>sch</g> is our scratch register)                                                    ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<g>rax</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rax</g>], <g>sch</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>rax</g>], <bl>0x1</bl></f>                                                             ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ We will represent as:                                                            ║
+║                                                                                  ║
+║       <f><pu>xmem</pu> [<g>rax</g>], <bl>0x1</bl></f>                                                            ║
+║                                                                                  ║
+║ In our previous blog-post <f1>(still feels weird to say that...)</f1> we came across an   ║
+║ issue with a single <pu>add</pu> instruction in our conditional block. What I completely  ║
+║ forgot about was that <pu>xor</pu> allows us to do register addition using <a href="https://www.plantation-productions.com/Webster/www.artofasm.com/DOS/ch04/CH04-2.html">relative</a>       ║
+║ <a href="https://www.plantation-productions.com/Webster/www.artofasm.com/DOS/ch04/CH04-2.html">addressing</a> tricks. In-fact, I did it earlier without thinking                    ║
+║                                                                                  ║
+║ With that realisation, and the "shorthand" method above, we can simplify the     ║
+║ conditional non-branching code block to:                                         ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║      <f1>here we are checking if <g>rcx</g> == <bl>n</bl>, returning <bl>a</bl> if <f>TRUE</f> and <bl>b</bl> if <f>FALSE</f></f1>        ║
+║                                                                                  ║
+║ <y>VALUE A</y>                                                                          ║
+║       <f><pu>xmov</pu> <g>rbx</g>, <bl>a</bl></f>             <f1># load a</f1>                                           ║
+║                                                                                  ║
+║ <y>VALUE B</y>                                                                          ║
+║       <f><pu>xmov</pu> <g>rcx</g>, <bl>b</bl></f>             <f1># load b</f1>                                           ║
+║                                                                                  ║
+║ <y>COMPARISON OF RBX TO N:</y>                                                          ║
+║       <f><pu>xmem</pu> [<g>rcx</g>], <bl>0x0</bl></f>         <f1># memory pointed to by rcx == 0x0</f1>                  ║
+║                                                                                  ║
+║       <f><pu>xmem</pu> [<bl>n</bl>], <bl>0x1</bl></f>           <f1># memory pointed to by n == 0x1</f1>                    ║
+║                                                                                  ║
+║       <f><pu>xmov</pu> <g>rax</g>, [<g>rcx</g>]</f>         <f1># rax now contains either 0x1, or 0x0</f1>              ║
+║                                                                                  ║
+║ <y>INDEXED LOOKUP FOR A AND B:</y>                                                      ║
+║       <f><pu>xmem</pu> [<bl>x</bl>], <bl>a</bl></f>             <f1># load a into table</f1>                                ║
+║                                                                                  ║
+║       <f><pu>xmem</pu> [<bl>x</bl>+<bl>1</bl>], <bl>b</bl></f>           <f1># load b into table+1</f1>                              ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>sch</g>, <g>sch</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>sch</g>, [<bl>x</bl>+<g>rax</g>]</f>                                                           ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>sch</g></f>            <f1># rax now contains a if rdx == n and b otherwise</f1>   ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Let's actually code this for values: <f><bl>a</bl> = <bl>0xdead</bl>, <bl>b</bl> = <bl>0xcaff</bl>, <bl>n</bl> = <bl>0x100</bl></f>           ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <f1>let our scratch register = <g>r10</g></f1>                                             ║
+║                                                                                  ║
+║       <f1>let our <bl>n</bl> register = <g>r11</g></f1>                                                   ║
+║                                                                                  ║
+║ <y>LOADING VALUES FOR A B N AND RDX:</y>                                                ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rbx</g>, <bl>0xdead</bl></f>                                                            ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <bl>0xcaff</bl></f>                                                            ║
+║       <f><pu>xor</pu> <g>r11</g>, <g>r11</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r11</g>, <bl>0x100</bl></f>                                                             ║
+║                                                                                  ║
+║ <y>LOAD VALUE TO COMPARE TO N:</y>                                                      ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <bl>0x100</bl></f>                                                             ║
+║                                                                                  ║
+║ <y>COMPARISON OF RDX TO N:</y>                                                          ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>rcx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rcx</g>], <g>r10</g></f>                                                             ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>r10</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <bl>0x1</bl></f>                                                             ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rbx</g>]</f>                                                             ║
+║                                                                                  ║
+║ <y>INDEXED LOOKUP FOR A AND B STARTING AT N:</y>                                        ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>r10</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>rbx</g></f>                                                             ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>+<bl>1</bl>]</f>                                                           ║
+║       <f><pu>xor</pu> [<g>r11</g>+<bl>1</bl>], <g>r10</g></f>                                                           ║
+║       <f><pu>xor</pu> [<g>r11</g>+<bl>1</bl>], <g>rcx</g></f>                                                           ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>+<g>rax</g>]</f>                                                         ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>r10</g></f>                                                               ║
+╠══------------------------------------------------------------------------------══╣
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:a]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug 1</y>:                                                                           ║
+║                                                                                  ║
+║ When trying to compile we get an error:                                          ║
+║                                                                                  ║
+║       <f><r>Error</r>: ambiguous operand size for '<pu>xor</pu>'</f>                                    ║
+║                                                                                  ║
+║ Some googling seems to suggest that unless otherwise specified, the default size ║
+║ for an addressing operand is set by the register <f1>(here <bl>64</bl> bit registers so <bl>64</bl>    ║
+║ bit size operands)</f1>                                                               ║
+║                                                                                  ║
+║ I tried looking for this information in the Intel manuals, but they didn't seem  ║
+║ to mention the operand sizes - turns out that depending on your syntax, the way  ║
+║ you signal size changes. The best way I found the size deceleration described    ║
+║ was from the <a href="https://www.cs.virginia.edu/~evans/cs216/guides/x86.html">following website</a> <f1>(for Intel syntax)</f1>:                               ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <f>In general, the intended size of the data item at a given memory address can be</f>  ║
+║ <f>inferred from the assembly code instruction in which it is referenced. For</f>       ║
+║ <f>example, in all of the above instructions, the size of the memory regions could</f>  ║
+║ <f>be inferred from the size of the register operand. When we were loading a</f>        ║
+║ <f>32-bit register, the assembler could infer that the region of memory we were</f>     ║
+║ <f>referring to was 4 bytes wide. When we were storing the value of a one byte</f>      ║
+║ <f>register to memory, the assembler could infer that we wanted the address to</f>      ║
+║ <f>refer to a single byte in memory.</f>                                                ║
+║                                                                                  ║
+║ <f>However, in some cases the size of a referred-to memory region is ambiguous.</f>     ║
+║ <f>Consider the instruction mov [ebx], 2. Should this instruction move the value 2</f>  ║
+║ <f>into the single byte at address EBX? Perhaps it should move the 32-bit integer</f>   ║
+║ <f>representation of 2 into the 4-bytes starting at address EBX. Since either is a</f>  ║
+║ <f>valid possible interpretation, the assembler must be explicitly directed as to</f>   ║
+║ <f>which is correct. The size directives BYTE PTR, WORD PTR, and DWORD PTR serve</f>    ║
+║ <f>this purpose, indicating sizes of 1, 2, and 4 bytes respectively.</f>                ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ This might the first time I prefer the implementation in AT&T syntax over Intel. ║
+║ Where the operator <f1>(say <pu>mov</pu>)</f1> is just suffixed with one of the following size     ║
+║ labels:                                                                          ║
+║                                                                                  ║
+║       <f1><o>b</o> = <bl>byte</bl> (8 bit)</f1>                                                           ║
+║       <f1><o>s</o> = <bl>single</bl> (32-bit floating point)</f1>                                         ║
+║       <f1><o>w</o> = <bl>word</bl> (16 bit)</f1>                                                          ║
+║       <f1><o>l</o> = <bl>long</bl> (32 bit integer or 64-bit floating point)</f1>                         ║
+║       <f1><o>q</o> = <bl>quad</bl> (64 bit)</f1>                                                          ║
+║       <f1><o>t</o> = <bl>ten bytes</bl> (80-bit floating point)</f1>                                      ║
+║                                                                                  ║
+║ So the instruction:                                                              ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>esi</g>, [<g>rax</g>]</f>                                                             ║
+║                                                                                  ║
+║ Becomes in AT&T:                                                                 ║
+║                                                                                  ║
+║       <f><pu>mov</pu><o>l</o> <g>esi</g>, [<g>rax</g>]</f>                                                            ║
+║                                                                                  ║
+║ Instead of the Intel:                                                            ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>esi</g>, <o>DWORD PTR</o> [<g>rax</g>]</f>                                                   ║
+║                                                                                  ║
+║ Regardless, I'm sticking with Intel for the moment so let's amend our assembly   ║
+║ code to include the <bl>X</bl><o>WORD PTR</o> labels <f1>(only one in our case)</f1> and try again        ║
+║                                                                                  ║
+║       <f1>-> gcc -nostdlib -nostartfiles -no-pie asm.s -o asm</f1>                        ║
+║                                                                                  ║
+║ Nice, we get a compiled file - that when we run, <r>SegFault</r>s...                    ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:b]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug 2</y>:                                                                           ║
+║                                                                                  ║
+║ I had a feeling this would happen. Lets try and step through the execution using ║
+║ a debugger to see if trying to write to <f>[<bl>0</bl>]</f> is what's causing this, or something ║
+║ else. Firstly, let's compile with debug symbols:                                 ║
+║                                                                                  ║
+║       <f1>-> gcc -g -nostdlib -nostartfiles -no-pie asm.s -o asm</f1>                     ║
+║                                                                                  ║
+║ Stepping through the instructions, we get a <r>SegFault</r> at line <bl>20</bl> for:             ║
+║                                                                                  ║
+║       <f1>20  -></f1>  <f><pu>xor</pu> <g>r10</g>, [<g>rbx</g>]</f>                                                     ║
+║                                                                                  ║
+║ And if we <f>[info registers]</f> we can see that:                                      ║
+║                                                                                  ║
+║       <g>rax</g>            <bl>0x0                 0</bl>                                       ║
+║       <g>rbx</g>            <bl>0xdead              57005</bl>                                   ║
+║       <g>rcx</g>            <bl>0xcaff              51967</bl>                                   ║
+║       <g>rcx</g>            <bl>0x100               256</bl>                                     ║
+║                                                                                  ║
+║ Which are our intended values - but accessing the memory at the location <bl>0xdead</bl>  ║
+║ causes a <r>SegFault</r> on our system, despite the compiler allowing it. Our issue is  ║
+║ that Linux virtual addressing explicitly disallows the lower addresses from      ║
+║ being used to stop stack overflow exploits and the like.                         ║
+║                                                                                  ║
+║ What addresses are free to use then?                                             ║
+║                                                                                  ║
+║ The stack needs to be free for writing for sure, so anything from <g>rsp</g> onwards    ║
+║ <f1>(within reason)</f1> ought to be good. Using GDB, <f>[info proc mappings]</f> gives us the   ║
+║ addressing structure for our binary:                                             ║
+║                                                                                  ║
+║       <f1>[stack]</f1>                                                                    ║
+║       <f1>start:</f1>          <bl>0x00007ffffffde000</bl>                                         ║
+║       <f1>end:</f1>            <bl>0x00007ffffffff000</bl>                                         ║
+║       <f1>length:</f1>         <bl>0x21000</bl>                                                    ║
+║                                                                                  ║
+║ For the moment ignore the issues this presents us in terms of what hardcoded     ║
+║ values we are allowed to use, and see if we can get our <pu>xor</pu> code to              ║
+║ just run at all. Our new values are now:                                         ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <f><g>rcx</g>/<bl>target</bl>:  OLD<f1>-></f1> <bl>0x100</bl>     NEW<f1>-></f1> [<g>rsp</g>+<bl>0</bl>] = <bl>0x7fffffffdea0</bl></f>                ║
+║       <f><g>rbx</g>/<bl>a</bl>:       OLD<f1>-></f1> <bl>0xdead</bl>    NEW<f1>-></f1> [<g>rsp</g>+<bl>1</bl>] = <bl>0x7fffffffdea1</bl></f>                ║
+║       <f><g>rcx</g>/<bl>b</bl>:       OLD<f1>-></f1> <bl>0xcaff</bl>    NEW<f1>-></f1> [<g>rsp</g>+<bl>2</bl>] = <bl>0x7fffffffdea2</bl></f>                ║
+║       <f><g>r11</g>/<bl>n</bl>:       OLD<f1>-></f1> <bl>0x100</bl>     NEW<f1>-></f1> [<g>rsp</g>+<bl>0</bl>] = <bl>0x7fffffffdead</bl></f>                ║
+╠══------------------------------------------------------------------------------══╣
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:c]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug 3</y>:                                                                           ║
+║                                                                                  ║
+║ Compiling this gives us 4 new errors, one for each of our hardcoded variables... ║
+║ each reads:                                                                      ║
+║                                                                                  ║
+║       <f><r>Error</r>: operand type mismatch for '<pu>xor</pu>'</f>                                     ║
+║                                                                                  ║
+║ So it turns out that the largest item that <pu>xor</pu> can take <a href="https://www.felixcloutier.com/x86/xor">is an imm32</a> value and    ║
+║ since the value we are trying to pass is <bl>48</bl> bits, it doesn't allow it. Of course ║
+║ if we just placed this value in a register, then <pu>xor</pu>ed it with our target that   ║
+║ would work just fine. We however cannot do this, as our <pu>xmov</pu> instruction will    ║
+║ always have the <bl>im32</bl> constraint somewhere in the chain                           ║
+║                                                                                  ║
+║ Let's try fetching a <bl>>32</bl> bit value from <g>rsp</g> using:                               ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <pu>xor</pu> <g>rax</g>, <g>rax</g>                                                               ║
+║       <pu>xor</pu> <g>rax</g>, <g>rsp</g>                                                               ║
+║       <pu>xor</pu> <g>rax</g>, <bl>0x1</bl>                                                               ║
+║                                                                                  ║
+║       <f1>yeilds:</f1>                                                                    ║
+║                                                                                  ║
+║       <g>rax</g>            <bl>0x7fffffffdea1      140737488346785</bl>                         ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Nice! okay, so now I shall try making our program again, using the values from   ║
+║ above and see if it runs                                                         ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:d]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug 4</y>:                                                                           ║
+║                                                                                  ║
+║ We got past our previous roadblock of assigning values, but still run into a     ║
+║ <r>SegFault</r> at line <bl>42</bl>:                                                             ║
+║                                                                                  ║
+║         <f><f1>42  -></f1>  <pu>xor</pu> <g>r10</g>, [<g>r11</g>+<g>rax</g>]</f>                                               ║
+║                                                                                  ║
+║ Let's see what <g>r10</g>, <g>r11</g> and <g>rax</g> contain to see if we can understand our <r>SegFault</r> ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <g>rax</g>            <bl>0xffffffe16c000000  -131332046848</bl>        <o>unexpected?</o>        ║
+║       <g>rbx</g>            <bl>0x7fffffffdea1      140737488346785</bl>        <g>expected</g>         ║
+║       <g>rcx</g>            <bl>0x7fffffffdea2      140737488346786</bl>        <g>expected</g>         ║
+║       <g>rcx</g>            <bl>0x7fffffffdea0      140737488346784</bl>        <g>expected</g>         ║
+║       <g>rsp</g>            <bl>0x7fffffffdea0      0x7fffffffdea0</bl>         <g>expected</g>         ║
+║                                                                                  ║
+║       <g>r10</g>            <bl>0x0                 0</bl>                                       ║
+║       <g>r11</g>            <bl>0x7fffffffdea0      140737488346784</bl>        <g>expected</g>         ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ That seems odd, I'll try retrace the steps that <g>rax</g> takes to get there:          ║
+║                                                                                  ║
+║       <f><f1>28  -></f1>  <pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                       ║
+║       <f><f1>29  -></f1>  <pu>xor</pu> <g>rax</g>, [<g>rbx</g>]</f>                                                     ║
+║                                                                                  ║
+║ At this point, <g>rax</g> is <bl>0</bl> and <g>rbx</g> is ...<bl>5</bl> - nothing wrong there. However, the      ║
+║ memory pointed to by <g>rbx</g> is incorrect. I think I've made a mistake somewhere...  ║
+║                                                                                  ║
+║ After a longer time than I'd like to admit, I found that some of the <g>rbx</g>/<g>rcx</g>     ║
+║ registers were mixed up                                                          ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:e]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug 5</y>:                                                                           ║
+║                                                                                  ║
+║ Now when we run our program, we get the correct result for the first case, but   ║
+║ we get something a little odd for our second case. Here are the registers...     ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <f1>for the first case:</f1>                                                        ║
+║       <g>rax</g>            <bl>0x7fffffffdea1      140737488346785</bl>                         ║
+║                                                                                  ║
+║       <f1>for the second case:</f1>                                                       ║
+║       <g>rbx</g>            <bl>0x7fffffffdea1a2    36028797016777122</bl>                       ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ It looks like the first register is overwriting the second one, which it turns   ║
+║ out, it is. I made the mistake of thinking of each address in memory as having   ║
+║ unlimited size to put things into - I think this misunderstanding came from the  ║
+║ way we are treating addresses as arrays, and that each index of an array can     ║
+║ have whatever you want in it                                                     ║
+║                                                                                  ║
+║ Our memory would look something like:                                            ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <f1>addresses (relative)</f1>                                                             ║
+║                                                                                  ║
+║ <f1>0</f1>      <bl>7f</bl><y>───────────────┐</y>                                                        ║
+║ <f1>1</f1>      <bl>ff</bl>      <bl>7f</bl><y>───┐   │</y>                                                        ║
+║ <f1>2</f1>      <bl>ff</bl>      <bl>ff</bl>   <y>│   │</y>                                                        ║
+║ <f1>3</f1>      <bl>ff</bl>      <bl>ff</bl>   <y>│   │</y>                                                        ║
+║ <f1>4</f1>      <bl>de</bl>      <bl>ff</bl>   <y>│   │</y>                                                        ║
+║ <f1>5</f1>      <bl>a1</bl><y>──────</y><bl>de</bl><y>┄┄┄│─┬─┘</y>                                                        ║
+║ <f1>6</f1>              <bl>a2</bl><y>─┬─┘ └─</y> <f>2nd write</f>                                               ║
+║                   <y>└─</y> <f>1st write</f>                                                   ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Fixing this is as simple as multiplying the <g>rax</g> value by our chosen offset <f1>(here</f1> ║
+║ <f1>I chose 8 for 64 bit numbers)</f1>. The only caveat is that as we cannot use the <pu>imul</pu> ║
+║ instruction, we need to do this via relative addressing, which only allows       ║
+║ multiplication of <f><bl>2</bl>^<bl>x</bl></f>                                                            ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:f]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>Bug? 6</y>:                                                                          ║
+║                                                                                  ║
+║ A good 30% of the time trying to get this program to work was wrestling with one ║
+║ particular issue. When we step through our program in GDB to see what is going   ║
+║ on at each stage and what the registers are doing, GDB only seems to update the  ║
+║ registers page once you have stepped past an instruction. For every line of code ║
+║ except for one, this is fine                                                     ║
+║                                                                                  ║
+║ If, however, we step past the last instruction <f1>(the one that should show us      ║
+║ either a or b in <g>rax</g>)</f1> we get a very odd number in <g>rax</g>:                           ║
+║                                                                                  ║
+║       <g>rax</g>            <bl>0x7df00             515840</bl>                                  ║
+║                                                                                  ║
+║ This was greatly confusing, as the previous instruction showed that the          ║
+║ registers seemed in the correct state, with the correct a/b value ready to be    ║
+║ put into <g>rax</g>:                                                                    ║
+║                                                                                  ║
+║       <g>rax</g>            <bl>0x1                 0</bl>                                       ║
+║       <g>r10</g>            <bl>0x7fffffffdea1      140737488346785</bl>                         ║
+║                                                                                  ║
+║ And all that was listed afterwards was:                                          ║
+║                                                                                  ║
+║       <f1>44  -></f1>  <f><pu>xor</pu> <g>rax</g>, <g>r10</g></f>                                                       ║
+║                                                                                  ║
+║ Another odd thing was that each time I compiled the program, this value would    ║
+║ change. This should have been a lightbulb moment for me, but I missed it and     ║
+║ kept plugging on along fruitless roads                                           ║
+║                                                                                  ║
+║ Eventually though, and with the help of some people from the <a href="https://www.openanalysis.net/">OAlabs</a> discord      ║
+║ <f1>(mainly <a href="https://xusheng.dev/posts/">Xusheng</a>)</f1> I found out what was happening. When the binary was compiled,   ║
+║ as my code wasn't very long - it was shorter than the 4k page size. This meant   ║
+║ that the remainder of the page was filled with <bl>0</bl>s                                ║
+║                                                                                  ║
+║ A funny quirk of x86 is that <bl>0000</bl> as bytecode executes to:                       ║
+║                                                                                  ║
+║       <f><pu>add</pu> <o>BYTE PTR</o> [<g>rax</g>], <g>al</g></f>                                                     ║
+║                                                                                  ║
+║ This would 99% of the time cause a <r>SegFault</r>, but since my program specifically   ║
+║ relies on loading values that are accessible memory addresses - dereferencing    ║
+║ <g>rax</g> actually executes. When I stepped in GDB past the last instruction, the code ║
+║ flow passed to these "<bl>0000</bl>" sections, which also have some non-zero values in    ║
+║ there placed from when the rest of the page is marked as "empty". These also,    ║
+║ by some quirk of ELF page construction, happen to correspond to valid x86        ║
+║ instructions!                                                                    ║
+║                                                                                  ║
+║ These instructions then modify the <g>rax</g> register a bunch of times, all the while  ║
+║ appearing as a single step in GDB                                                ║
+║                                                                                  ║
+║ Fixing this is thankfully somewhat easy, if we add a single <pu>nop</pu> to the end of    ║
+║ the program, then GDB doesn't have a fit stepping it <f1>(in our case, our <pu>nop</pu></f1>       ║
+║ <f1>instruction could just be <pu>xor</pu> <g>r10</g>, <g>r10</g>)</f1>. We could also just not use <g>rax</g> as our   ║
+║ register - but given that this problem will dissolve the moment our program      ║
+║ actually functions I'd rather keep it there                                      ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[ 3 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ So, now that all the bugs <f1>(I found)</f1> have been fumigated, we can summarise what   ║
+║ our executable program does:                                                     ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║       <f1><f>load a value to compare</f> - let's call this <bl>x</bl> (in <g>rcx</g>)</f1>                       ║
+║                                                                                  ║
+║       <f1><f>load a value to compare to <bl>x</bl></f> - let's call this <bl>n</bl> (in <g>r11</g>)</f1>                  ║
+║                                                                                  ║
+║       <f1><f>load a value to display if we fail</f> - let's call this <bl>a</bl> (in <g>rbx</g>)</f1>            ║
+║                                                                                  ║
+║       <f1><f>load a value to display if we succeed</f> - let's call this <bl>b</bl> (in <g>rcx</g>)</f1>         ║
+║                                                                                  ║
+║       <f>load into the memory pointed to by <bl>x</bl>, the value <bl>0</bl></f>                          ║
+║                                                                                  ║
+║       <f>load into the memory pointed to by <bl>n</bl>, the value <bl>1</bl></f>                          ║
+║                                                                                  ║
+║       <f>load the value pointed to by <bl>x</bl>, into <g>rax</g></f> <f1>(<g>rax</g> = <bl>1</bl> or <bl>0</bl>)</f1>                    ║
+║                                                                                  ║
+║       <f>set up an array indexed from <bl>n</bl></f>                                             ║
+║                                                                                  ║
+║       <f>load value <bl>a</bl> into the memory pointed to by <bl>n</bl></f>                               ║
+║                                                                                  ║
+║       <f>load value b into the memory pointed to by <bl>n</bl> + <bl>1</bl></f>                           ║
+║                                                                                  ║
+║       <f>retrieve the value pointed to by <bl>n</bl> + <g>rax</g></f> <f1>(so <bl>n</bl> + <bl>1</bl> or <bl>0</bl>)</f1>                   ║
+║                                                                                  ║
+║       <f>load either <bl>a</bl> or <bl>b</bl> into <g>rax</g></f>                                                ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Here is the final source code:                                                   ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rsp</g></f>            <f1># load rsp into rdx, this = val to compare</f1>         ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rbx</g>, <g>rsp</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rbx</g>, <bl>0x1</bl></f>            <f1># load rsp+1 into rbx, this = a</f1>                    ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <g>rsp</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rcx</g>, <bl>0x2</bl></f>            <f1># load rsp+2 into rdx, this = b</f1>                    ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, <g>r11</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r11</g>, <g>rsp</g></f>            <f1># load rps into r11, this = n</f1>                      ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>            <f1># r10 is our scratch</f1>                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>rcx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rcx</g>], <g>r10</g></f>          <f1># clear memory pointed to by rdx</f1>                   ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>r10</g></f>          <f1># clear memory pointed to by n</f1>                     ║
+║       <f><pu>xor</pu> <o>BYTE PTR</o> [<g>r11</g>], <bl>0x1</bl></f> <f1># load 1 into the memory pointed to by n</f1>           ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rcx</g>]</f>          <f1># load 0 or 1 into rax if rdx == n or not</f1>          ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>r10</g></f>                                                             ║
+║       <f><pu>xor</pu> [<g>r11</g>], <g>rbx</g></f>          <f1># load a into memory pointed to by n</f1>               ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>+<bl>8</bl>]</f>                                                           ║
+║       <f><pu>xor</pu> [<g>r11</g>+<bl>8</bl>], <g>r10</g></f>                                                           ║
+║       <f><pu>xor</pu> [<g>r11</g>+<bl>8</bl>], <g>rcx</g></f>        <f1># load b into memory pointed to by n+8</f1>             ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>+<g>rax</g>*<bl>8</bl>]</f>    <f1># retrieve rax*8 to index for a/b</f1>                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>r10</g></f>            <f1># load a/b into rax</f1>                                ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>            <f1># padding</f1>                                          ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Try it yourself if you like:                                                     ║
+║ compiled using: <f1>gcc -g -nostdlib -nostartfiles -no-pie asm.s -o asm</f1>              ║
+║                                                                                  ║
+║ I think this satisfies our aim for this short part - next I'll have to work out  ║
+║ some way of transmuting this data into "strings" and a way to invoke syscalls    ║
+║ using <pu>xor</pu>. We shall see how easy that turns out to be...                         ║
+║                                                                                  ║
+║ <r>CWW out</r>                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
+WRITEUP HERE
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
+</pre>
