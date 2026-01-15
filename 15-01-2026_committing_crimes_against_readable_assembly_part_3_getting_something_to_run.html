@@ -71,7 +71,7 @@
 ║ conditional non-branching code block to:                                         ║
 ║                                                                                  ║
 ╠══------------------------------------------------------------------------------══╣
-║      <f1>here we are checking if <g>rcx</g> == <bl>n</bl>, returning <bl>a</bl> if <f>TRUE</f> and <bl>b</bl> if <f>FALSE</f></f1>        ║
+║      <f1>here we are checking if <g>rdx</g> == <bl>n</bl>, returning <bl>a</bl> if <f>TRUE</f> and <bl>b</bl> if <f>FALSE</f></f1>        ║
 ║                                                                                  ║
 ║ <y>VALUE A</y>                                                                          ║
 ║       <f><pu>xmov</pu> <g>rbx</g>, <bl>a</bl></f>             <f1># load a</f1>                                           ║
@@ -80,11 +80,11 @@
 ║       <f><pu>xmov</pu> <g>rcx</g>, <bl>b</bl></f>             <f1># load b</f1>                                           ║
 ║                                                                                  ║
 ║ <y>COMPARISON OF RBX TO N:</y>                                                          ║
-║       <f><pu>xmem</pu> [<g>rcx</g>], <bl>0x0</bl></f>         <f1># memory pointed to by rcx == 0x0</f1>                  ║
+║       <f><pu>xmem</pu> [<g>rdx</g>], <bl>0x0</bl></f>         <f1># memory pointed to by rdx == 0x0</f1>                  ║
 ║                                                                                  ║
 ║       <f><pu>xmem</pu> [<bl>n</bl>], <bl>0x1</bl></f>           <f1># memory pointed to by n == 0x1</f1>                    ║
 ║                                                                                  ║
-║       <f><pu>xmov</pu> <g>rax</g>, [<g>rcx</g>]</f>         <f1># rax now contains either 0x1, or 0x0</f1>              ║
+║       <f><pu>xmov</pu> <g>rax</g>, [<g>rdx</g>]</f>         <f1># rax now contains either 0x1, or 0x0</f1>              ║
 ║                                                                                  ║
 ║ <y>INDEXED LOOKUP FOR A AND B:</y>                                                      ║
 ║       <f><pu>xmem</pu> [<bl>x</bl>], <bl>a</bl></f>             <f1># load a into table</f1>                                ║
@@ -102,9 +102,11 @@
 ╠══------------------------------------------------------------------------------══╣
 ║       <f1>let our scratch register = <g>r10</g></f1>                                             ║
 ║                                                                                  ║
+║       <f1>let our target register = <g>rdx</g></f1>                                              ║
+║                                                                                  ║
 ║       <f1>let our <bl>n</bl> register = <g>r11</g></f1>                                                   ║
 ║                                                                                  ║
-║ <y>LOADING VALUES FOR A B N AND RDX:</y>                                                ║
+║ <y>LOADING VALUES FOR A B AND N:</y>                                                ║
 ║       <f><pu>xor</pu> <g>rbx</g>, <g>rbx</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>rbx</g>, <bl>0xdead</bl></f>                                                            ║
 ║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
@@ -113,13 +115,13 @@
 ║       <f><pu>xor</pu> <g>r11</g>, <bl>0x100</bl></f>                                                             ║
 ║                                                                                  ║
 ║ <y>LOAD VALUE TO COMPARE TO N:</y>                                                      ║
-║       <f><pu>xor</pu> <g>rcx</g>, <g>rcx</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rcx</g>, <bl>0x100</bl></f>                                                             ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdx</g>, <bl>0x100</bl></f>                                                             ║
 ║                                                                                  ║
 ║ <y>COMPARISON OF RDX TO N:</y>                                                          ║
 ║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>r10</g>, [<g>rcx</g>]</f>                                                             ║
-║       <f><pu>xor</pu> [<g>rcx</g>], <g>r10</g></f>                                                             ║
+║       <f><pu>xor</pu> <g>r10</g>, [<g>rdx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rdx</g>], <g>r10</g></f>                                                             ║
 ║                                                                                  ║
 ║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>r10</g>, [<g>r11</g>]</f>                                                             ║
@@ -127,7 +129,7 @@
 ║       <f><pu>xor</pu> [<g>r11</g>], <bl>0x1</bl></f>                                                             ║
 ║                                                                                  ║
 ║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rax</g>, [<g>rbx</g>]</f>                                                             ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rdx</g>]</f>                                                             ║
 ║                                                                                  ║
 ║ <y>INDEXED LOOKUP FOR A AND B STARTING AT N:</y>                                        ║
 ║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
