@@ -1,0 +1,36 @@
+We're back, and it is time to suffer
+
+Last time we got a working binary that compared a value, and "output" a specific
+value depending on the result. While it is true that there is still a lot of
+tweaking to do to make that model work for the types of values we would want to
+be comparing, for the moment let's leave that be - and work on the next
+conceptual piece (I have arbitrarily decided) we need: SysCalls
+
+At the moment, our binary is only a program by a stretch of the common
+definition. If we ran it outside a debugger, or without a breakpoint, execution
+would just continue as there is no exit SysCall. Hang on a minute I hear you
+exclaim, what's a SysCall?
+
+From the 'ol wikipedia:
+"a system call (syscall) is the programmatic way in which a computer program
+requests a service from the operating system"
+
+As we have decided to try and produce code that runs within operating systems,
+unfortunately we have to play by their rules. That means asking very politely
+when we require some functionality that is outside of our program's control.
+
+Instead of being able to access the memory of hardware input (like a keyboard):
+
+        xmov rax, [input address]
+        
+We have to:
+
+        mov rax, arg1               # arguments correspond to stdin syscall
+        mov rbx, arg2
+        mov rcx, arg3
+        syscall
+
+Behind the SysCalls sit such very useful abilities such as:
+
+        - reading input from a console (stdin)
+        - displaying to a console (stdout)
