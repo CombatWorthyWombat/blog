@@ -8,8 +8,8 @@ body {
   background-color: #0A0B11;
 }
 
-pre {
-  font-family: "UnifontExMono";
+body, pre, * {
+  font-family: "UnifontExMono", monospace;
   font-size: 18px;
   line-height: 1;
   padding-left: 40px;
