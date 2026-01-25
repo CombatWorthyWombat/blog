@@ -1,6 +1,6 @@
 @font-face {
   font-family: "UnifontExMono";
-  src: url("UnifontExMono.woff2") format("woff2");
+  src: url("/home/user/Downloads/FoundryZero/UnifontExMono.woff2") format("woff2");
 }
 
 body {
@@ -8,14 +8,14 @@ body {
   background-color: #0A0B11;
 }
 
-body, pre, * {
-  font-family: "UnifontExMono", monospace;
+pre {
+  font-family: "UnifontExMono";
   font-size: 18px;
   line-height: 1;
   padding-left: 40px;
   white-space: pre;
 }
-/* close to the gruvbox format */
+
 w { color: white; }
 r { color: #FB4934; } /* red */
 g { color: #B8BB26; } /* green */
