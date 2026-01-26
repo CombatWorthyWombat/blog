@@ -1,6 +1,6 @@
 @font-face {
   font-family: "UnifontExMono";
-  src: url("/home/user/Downloads/FoundryZero/UnifontExMono.woff2") format("woff2");
+  src: url("UnifontExMono.woff2") format("woff2");
 }
 
 body {
