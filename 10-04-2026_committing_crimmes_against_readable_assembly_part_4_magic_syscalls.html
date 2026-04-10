@@ -1,0 +1,854 @@
+<head>
+  <meta charset="utf-8">
+  <title>CWW/blog/CCARA_Part_4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div style="display: inline-block; text-align: left;"><pre>
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║ <f1>10-04-2026</f1>                                                                       ║
+║ <bl>Committing Crimes Against Readable Assembly Part 4</bl>                               ║
+║                                                                                  ║
+║ <bl>Magic syscalls</bl>                                                                   ║
+║                                                                                  ║
+╠══-----==[ Contents ]==---------------------------------------------------------══╣
+║                                                                                  ║
+║ <o>1:</o> <y>systems, calls, and systemcalls</y>                                               ║
+║ <o>2:</o> <y>ideas</y>                                                                         ║
+║   <o>a:</o> <y>direct bytecode</y>                                                             ║
+║   <o>b:</o> <y>intentional faults</y>                                                          ║
+║   <o>c:</o> <y>mmio/pmio</y>                                                                   ║
+║   <o>d:</o> <y>intentional faults revisited</y>                                                ║
+║ <o>3:</o> <y>one small problem</y>                                                             ║
+║ <o>4:</o> <y>non syscall syscalls</y>                                                          ║
+║ <o>5:</o> <y>final touches and summary</y>                                                     ║
+║ <o>6:</o> <y>the program</y>                                                                   ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════════╗
+╠══-----==<o>[ 1 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ We're back, it's been quite a while and it is time <f1>(for me)</f1> to suffer            ║
+║                                                                                  ║
+║ Last time we got a working binary that compared a value, and "output" a specific ║
+║ value depending on the result. While it is true that there is still a lot of     ║
+║ tweaking to do to make that model work for the types of values we would want to  ║
+║ be comparing, for the moment let's leave that be - and work on the next          ║
+║ conceptual piece <f1>(I have arbitrarily decided)</f1> we need: <pu>syscall</pu>s                  ║
+║                                                                                  ║
+║ At the moment, our binary is only a program by sheer definition. If we ran it    ║
+║ outside a debugger, or without a breakpoint, execution would just continue       ║
+║ careening into the rest of the elf empty page. In order to exit properly, or do  ║
+║ anything of note - we would need to invoke a <pu>syscall</pu>. But hang on a minute I     ║
+║ hear you exclaim, what's a <pu>syscall</pu>?                                              ║
+║                                                                                  ║
+║ From the <a href="https://en.wikipedia.org/wiki/System_call">'ol Wikipedia</a>:                                                          ║
+╠══------------------------------------------------------------------------------══╣
+║ <f>"a system call (syscall) is the programmatic way in which a computer program</f>     ║
+║ <f>requests a service from the operating system"</f>                                    ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ As we have decided to try and produce code that runs within an operating         ║
+║ system's <f1>(in our case, Linux)</f1> we have to play by its rules. That means asking    ║
+║ very politely when we require some functionality that is outside of our          ║
+║ program's control                                                                ║
+║                                                                                  ║
+║ Such functionalities that we may want to be able to use include; exiting the     ║
+║ program, talking to the file system, displaying to the screen and many more      ║
+║                                                                                  ║
+║ On older OSs and embedded devices, sometimes these sorts of things were          ║
+║ accessible through MMIO <f1>(mapping device memory to virtual memory within the</f1>      ║
+║ <f1>program's scope)</f1> or PMMIO <f1>(mapping device I/O to ports)</f1>                          ║
+║                                                                                  ║
+║ Modern Linux though, instead of being able to access the memory of hardware      ║
+║ input <f1>(of, say, a keyboard)</f1> by doing:                                            ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>rax</g>, [keyboard input address]</f>                                          ║
+║                                                                                  ║
+║ Forces us to use these "<pu>syscall</pu>s" <f1>(here with the syscall instruction)</f1>:           ║
+╠══------------------------------------------------------------------------------══╣
+║       <f><pu>mov</pu> <g>rax</g>, <bl>arg1</bl></f>           <f1># args for "keyboard" syscall</f1>                      ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>arg2</bl></f>                                                              ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>arg3</bl></f>                                                              ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Unfortunately I count <pu>syscall</pu> as an instruction, and since it's not spelt "<pu>xor</pu>"  ║
+║ we aren't allowed to use it. So how do we go about achieving the functionality   ║
+║ of system calls without ever using them?                                         ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:a]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Let's say that we want to write the following:                                   ║
+╠══------------------------------------------------------------------------------══╣
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x1</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0x2</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>0x3</bl></f>                                                               ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+╠══------------------------------------------------------------------------------══╣  
+║                                                                                  ║
+║ This assembly has some corresponding bytecode. When compiled with GCC <f1>(objdump</f1>   ║
+║ <f1>-s -j .text syscall || hd)</f1>, the snippet above becomes:                           ║
+╠══------------------------------------------------------------------------------══╣
+║  <f1>401000</f1>  <bl>48 c7 c0 01 00 00 00 48  c7 c3 02 00 00 00 48 c7</bl>  <f1>H......H......H.</f1>      ║
+║  <f1>401010</f1>  <bl>c1 03 00 00 00 0f 05</bl>                              <f1>.......</f1>               ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ We can sort of see the instructions, and where they map onto our snippet:        ║
+╠══------------------------------------------------------------------------------══╣
+║       <f><pu>mov</pu> <g>rax</g>, 0x1</f>  <f1>-></f1>  <bl>48 c7 c0 01 00 00 00</bl>                                     ║
+║       <f><pu>mov</pu> <g>rdi</g>, 0x2</f>  <f1>-></f1>  <bl>48 c7 c3 02 00 00 00</bl>                                     ║
+║       <f><pu>mov</pu> <g>rsi</g>, 0x3</f>  <f1>-></f1>  <bl>48 c7 c1 03 00 00 00</bl>                                     ║
+║       <f><pu>syscall</pu></f>       <f1>-></f1>  <bl>0f 05</bl>                                                    ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Is there then, a way to write these bytes into memory somewhere, and then        ║
+║ execute them? that way we could do the writing with our <pu>xor</pu> instruction set, and ║
+║ still invoke a <pu>syscall</pu>                                                           ║
+║                                                                                  ║
+║ This would require a section of addresses somewhere that was readable, writeable ║
+║ and executable by our program. You can do this by explicitly by forcing your     ║
+║ compiler to link a segment with <r>r...w...e</r> permissions. This is generally         ║
+║ considered a terrible idea for safety reasons, so it could be perfect for us!    ║
+║                                                                                  ║
+║ However, given that the bytecodes will be read as opcodes + arguments, we are    ║
+║ essentially getting the CPU to execute non-<pu>xor</pu> instructions - even if no non-<pu>xor</pu> ║
+║ instructions appear in our source asm code. The purist in me feels this          ║
+║ capitulates a core component of the challenge - at that point we are             ║
+║ essentially just using <pu>xor</pu> to build a long list of numbers <f1>(bytecodes)</f1> which     ║
+║ isn't that impressive                                                            ║
+║                                                                                  ║
+║ Let's shelve this idea for the moment then                                       ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:b]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Our previous program exited whenever it tried to access an address outside of    ║
+║ the binaries readable segments. In a way, <r>SegFault</r>-ing was our way to halt the   ║
+║ program's execution                                                              ║
+║                                                                                  ║
+║ As exceptions halt execution - we can substitute the <pu>syscall</pu> for exit with a     ║
+║ purposeful exception invocation. <a href="https://www.felixcloutier.com/x86/xor">This</a> is a list of all the 64 bit mode           ║
+║ exceptions for the <pu>xor</pu> instruction:                                              ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <f>#SS<f1>(0)</f1> 	  If a memory address referencing the SS segment is in a</f>           ║
+║                 <f>non-canonical form</f>                                               ║
+║                                                                                  ║
+║ <f>#GP<f1>(0)</f1> 	  If the memory address is in a non-canonical form</f>                 ║
+║                                                                                  ║
+║ <f>#PF<f1>(fault-code)</f1> If a page fault occurs</f>                                           ║
+║                                                                                  ║
+║ <f>#AC<f1>(0)</f1> 	  If alignment checking is enabled and an unaligned memory</f>         ║
+║                 <f>reference is made while the current privilege level is 3</f>         ║
+║                                                                                  ║
+║ <f>#UD 	          If the LOCK prefix is used but the destination is not a memory</f>   ║
+║                 <f>operand</f>                                                          ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ I've decided to use the lock prefix without a memory operand for purposeful      ║
+║ fault invocation. Given the way our <pu>xor</pu> program flow works <f1>(see previous blogs)</f1>  ║
+║ we are likely to see <r>SegFault</r>s when things go wrong, so let's not confuse        ║
+║ ourselves by adding <r>SegFault</r>s when things go right. Instead this will display    ║
+║ the IllegalInstruction error in console.                                         ║
+║                                                                                  ║
+║ so this is our pseudo-"exit" <pu>syscall</pu>:                                            ║
+║                                                                                  ║
+║       <f><pu>lock</pu> <pu>xor</pu> <g>rax</g>, <g>rbx</g></f>                                                          ║
+║                                                                                  ║
+║ Unfortunately for us, GCC knows this would result in a fault, and doesn't allow  ║
+║ you to compile this:                                                             ║
+║                                                                                  ║
+║       Error: expecting lockable instruction after `lock'                         ║
+║                                                                                  ║
+║ Instead, we need to directly compile from bytecode <f1>(eugh)</f1>. We can include this   ║
+║ at the end of our files:                                                         ║
+║                                                                                  ║
+║       <f><o>.byte</o> <bl>0xF0</bl>, <bl>0x48</bl>, <bl>0x31</bl>, <bl>0xD8</bl></f>        <f1># bytecode for [lock xor rax, rbx]</f1>     ║
+║                                                                                  ║
+║ Ideally, this should show up as an <pu>xor</pu> instruction when disassembled. However,   ║
+║ when opening the executable in Binary Ninja <f1>(henceforth Binja)</f1>, we can see the   ║
+║ following for the .text section:                                                 ║
+╠══------------------------------------------------------------------------------══╣
+║     <f1>00401000</f1>        <bl>f0 .. .. ..   ??</bl>                                             ║
+║     <f1>00401001</f1>        <bl>.. 48 31 d8   H1.</bl>                                            ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Interestingly it's decided to partition off the last three bytes, perhaps they   ║
+║ are all utf-8 values? Regardless, it's clearly got this "wrong" - despite having ║
+║ the correct bytecode to reconstruct the instructions, Binja has decided that     ║
+║ this section is non-code.                                                        ║
+║                                                                                  ║
+║ It turns out that <y>_start</y> is not assumed to be a legit entry point to disassemble ║
+║ from, as sneaky malware authors could abuse that assumption to mess with the     ║
+║ read code flow.                                                                  ║
+║                                                                                  ║
+║ Hiding opcodes from disassemblers is always something interesting to play with,  ║
+║ so we might return to this another time, but for the time being - lets see if we ║
+║ can get Binja to display the instructions.                                       ║
+║                                                                                  ║
+║ By explicitly labelling <y>_start</y> as a:                                             ║
+║                                                                                  ║
+║       <f><y>.type _start</y>, <y>@function</y></f>                                                    ║
+║                                                                                  ║
+║ We shall make sure Binja knows it's a function - checking the disassembly view,  ║
+║ we can see that it isn't fixed at all. Hmmm.                                     ║
+║                                                                                  ║
+║ It seems that Binja knows x86 better than I, and notices that locking an <pu>xor</pu>     ║
+║ with two register operands is illegal, and so doesn't assume it is actual code.  ║
+║ Interestingly, this heuristic allows us to put any regular opcodes and arguments ║
+║ afterwards, and Binja will also not mark these up as instructions -  since the   ║
+║ CPU would have faulted previously.                                               ║
+║                                                                                  ║
+║ As a tentative solution, I shall use the <o>.byte</o> chunk as a substitution for the   ║
+║ exit <pu>syscall</pu>, despite the disassembly issues                                     ║
+║                                                                                  ║
+║ As for trying to emulate other <pu>syscall</pu>s using fault behaviour, we aren't so      ║
+║ lucky. Basically all of them crash the program, just with slightly different     ║
+║ fault messages. However, the signal handler may well come in handy later on...   ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:c]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Perhaps, if we could setup an environment where the keyboard and screen control  ║
+║ that is usually handled by <pu>syscall</pu>s, was instead mapped to specific regions of   ║
+║ virtual memory - we could just use relative addressing to use both of those      ║
+║ features, just as some older systems used to.                                    ║
+║                                                                                  ║
+║ This runs counter to the whole compartmentalisation and security ethos of Linux  ║
+║ so this might be a headache. As such, the only ways to achieve this require, at  ║
+║ least, root access to a system                                                   ║
+║                                                                                  ║
+║ One solution might be to create some sort of an "emulator" or VM. Kernel         ║
+║ programming - oh no                                                              ║
+║                                                                                  ║
+║ While this seems viable, I'd rather exhaust other options before spending weeks  ║
+║ being aggrieved at my inability to code kernel modules                           ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[2:d]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ It turns out, to my great fortune, that you can create custom signal handlers    ║
+║ for your programs in linux! They don't even need escalated privileges            ║
+║                                                                                  ║
+║ When our program raises a <r>SigIll</r>, the following happens:                         ║
+╠══------------------------------------------------------------------------------══╣
+║   <bl>the program raises a undefined instruction exception</bl>                           ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>CPU switches to kernel mode</f>                                                ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>kernel detects the exception is a <r>SigIll</r></f>                                   ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>the program's signal handlers table is accessed, and if one is registered,</f> ║
+║   <g>|</g>  <f>it is pointed to</f>                                                            ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>before calling the handler, the kernel saves the CPU registers in a</f>        ║
+║   <g>|</g>  <f>structure called ucontext</f>                                                   ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>the kernel sets up:</f>                                                        ║
+║   <g>|</g>    <f><g>rdi</g> <f1>-></f1> signal id</f>                                                          ║
+║   <g>|</g>    <f><g>rsi</g> <f1>-></f1> pointer to siginfo</f>                                                 ║
+║   <g>|</g>    <f><g>rdx</g> <f1>-></f1> pointer to ucontext</f>                                                ║
+║   <g>|</g>                                                                              ║
+║   <g>├─></g> <f>the handler is called, and the return value is stored in <g>rax</g></f>               ║
+║   <g>|</g>                                                                              ║
+║   <g>└─></g> <f>program resumes execution with the handler modified register values</f>        ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ I have no idea what the ucontext structure is actually like, so let's try and    ║
+║ setup a test program and inspect the registers to see how it's parsed            ║
+║                                                                                  ║
+║ A basic program that sets various registers to some useful values to confirm in  ║
+║ the debugger, then faults, will do just fine:                                    ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x1</bl></f>            <f1># test values</f1>                                      ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0x2</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>0x3</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rdx</g>, <bl>0x4</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>0x5</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r8</g>,  <bl>0x6</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r9</g>,  <bl>0x7</bl></f>                                                               ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r11</g>, [<bl>0x0</bl>]</f>                                                             ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ As well as a basic signal handler:                                               ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _sig_handler</y>                                                             ║
+║                                                                                  ║
+║ <y>_sig_handler:</y>                                                                    ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r12</g>, <bl>0xdead</bl></f>                                                            ║
+║       <f><pu>ret</pu></f>                                                                        ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Actually getting a separate program to take another as a signal handler seems a  ║
+║ little tricky, so I'll include the <y>_sig_handler</y> inside the main .elf             ║
+║                                                                                  ║
+║ The <pu>syscall</pu> for registering a signal handler for a specific signal is sigaction, ║
+║ which takes the following arguments: https://linux.die.net/man/2/rt_sigaction    ║
+║                                                                                  ║
+║     <f><g>sigaction</g>(<bl>signum</bl>, <bl>sigaction</bl>, <bl>sigaction_old</bl>)</f>                                  ║
+║                                                                                  ║
+║ where the sigaction arguments are structs containing a pointer to the signal     ║
+║ handler, flags to modify behaviour and any signals to block while running. The   ║
+║ second sigaction argument is just a pointer to the old struct, we don't need to  ║
+║ bother with that one, so that just = NULL                                        ║
+║                                                                                  ║
+║ Let's make a sigaction struct:                                                   ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.section .data</y>                                                                   ║
+║ <y>.align 8</y>                                                                         ║
+║ <y>_sigaction:</y>                                                                      ║
+║       <f><o>.quad</o> <y>_sig_handler</y></f>      <f1># pointer to the handler</f1>                           ║
+║       <f><o>.quad</o> <bl>0</bl></f>                 <f1># no flags</f1>                                         ║
+║       <f><o>.quad</o> <bl>0</bl></f>                 <f1># no restorer</f1>                                      ║
+║       <f><o>.zero</o> <bl>128</bl></f>               <f1># no blockers</f1>                                      ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ And then reference it in a <pu>syscall</pu> to sigaction:                                 ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0xd</bl></f>            <f1># syscall for sigaction</f1>                            ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0xb</bl></f>            <f1># signum for SigSegV</f1>                               ║
+║       <f><pu>lea</pu> <g>rsi</g>, [rel <y>_sigaction</y>]</f>         <f1># pointer to sigaction struct</f1>            ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>            <f1># pointer to old sigaction struct</f1>                  ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Once we smush all of that together, we get the following:                        ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>.global _sig_handler</y>                                                             ║
+║                                                                                  ║
+║ <y>.section .data</y>                                                                   ║
+║ <y>.align 8</y>                                                                         ║
+║ <y>_sigaction:</y>                                                                      ║
+║       <f><o>.quad</o> <y>_sig_handler</y></f>      <f1># pointer to the handler</f1>                           ║
+║       <f><o>.quad</o> <bl>0</bl></f>                                                                    ║
+║       <f><o>.quad</o> <bl>0</bl></f>                                                                    ║
+║       <f><o>.zero</o> <bl>128</bl></f>               <f1># no blockers</f1>                                      ║
+║                                                                                  ║
+║ <y>.section .text</y>                                                                   ║
+║ <y>_sig_handler:</y>                                                                    ║
+║       <f><pu>mov</pu> <g>r12</g>, <bl>0xdead</bl></f>         <f1># test value</f1>                                       ║
+║ <y>loop:</y>                                                                            ║
+║       <f><pu>jmp</pu> <y>loop</y></f>                                                                   ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>13</bl></f>             <f1># syscall for sigaction</f1>                            ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>11</bl></f>             <f1># signum for SigSegV</f1>                               ║
+║       <f><pu>lea</pu> <g>rsi</g>, [<g>rip</g> + <y>_sigaction</y>]</f>       <f1># pointer to sigaction struct</f1>            ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>            <f1># pointer to old sigaction struct</f1>                  ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>128</bl></f>                                                               ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x1</bl></f>            <f1># load test values</f1>                                 ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0x2</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>0x3</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>rdx</g>, <bl>0x4</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>0x5</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r8</g>,  <bl>0x6</bl></f>                                                               ║
+║       <f><pu>mov</pu> <g>r9</g>,  <bl>0x7</bl></f>                                                               ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r11</g>, [<bl>0</bl>]</f>            <f1># cause SigSegV</f1>                                    ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Compiling with gcc requires us to first make an object file:                     ║
+║                                                                                  ║
+║       gcc -c -g -o testprogram.o testprogram.s                                   ║
+║                                                                                  ║
+║ And then link it afterwards:                                                     ║
+║                                                                                  ║
+║       gcc -nostdlib -no-pie -o testprogram testprogram.o                         ║
+║                                                                                  ║
+║ gdb time <f1>(make sure to handle <r>SigSegV</r> nostop pass!)</f1> :)                           ║
+║                                                                                  ║
+║ Running our testprogram yields a <r>SegFault</r> - that's a good sign, alongside the    ║
+║ fact it compiled and linked as expected. This may the smoothest one of these     ║
+║ blogposts has gone <f1>(so far..)</f1>.                                                   ║
+║                                                                                  ║
+║ If we hit a breakpoint on our <y>_sig_handler</y>, the <g>rsp</g> register should contain a    ║
+║ pointer to the top of the signal frame - where our ucontext info is contained.   ║
+║ which, it doesn't. I knew it was too good to be true.                            ║
+║                                                                                  ║
+║ If we check the value in <g>rax</g> after we try to register a signal handler, we see   ║
+║ that the value is -22, which is the einval return. This means our registration   ║
+║ is where we are failing, which is why the <r>SegFault</r> just terminates the program!  ║
+║                                                                                  ║
+║ Turns out, I needed to be more explicit with my handler, and specify the fault   ║
+║ that it targets in the arguments - instead of leaving it blank and hoping that   ║
+║ applied to all faults. Plus I had to change the test values a little, so that    ║
+║ some duplicates that were showing up in GDB no longer appeared. There is now     ║
+║ also a "restorer" function, and corresponding arguments.                         ║
+║                                                                                  ║
+║ This is the working test script, for creating and registering a signal handler:  ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>.global _sig_handler</y>                                                             ║
+║                                                                                  ║
+║ <y>.section .data</y>                                                                   ║
+║ <y>.align 8</y>                                                                         ║
+║ <y>_sigaction:</y>                                                                      ║
+║       <f><o>.quad</o> <y>_sig_handler</y></f>      <f1># pointer to the handler</f1>                           ║
+║       <f><o>.quad</o> 0x04000000</f>                                                           ║
+║       <f><o>.quad</o> <y>_restorer</y></f>                                                            ║
+║       <f><o>.quad</o> 0</f>                                                                    ║
+║                                                                                  ║
+║ <y>.section .text</y>                                                                   ║
+║ <y>_sig_handler:</y>                                                                    ║
+║       <f>your sighandler instructions of choice</f>                                     ║
+║       <f><pu>ret</pu></f>                                                                        ║
+║                                                                                  ║
+║ <y>_restorer:</y>                                                                       ║
+║       <f><pu>mov</pu> <g>rax</g>, 15</f>             <f1># rt_sigreturn</f1>                                     ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>mov</pu> <g>rax</g>, 13</f>             <f1># syscall for sigaction</f1>                            ║
+║       <f><pu>mov</pu> <g>rdi</g>, 11</f>             <f1># signum for SigSegV</f1>                               ║
+║       <f><pu>lea</pu> <g>rsi</g>, [<g>rip</g> + <y>_sigaction</y>]</f>       <f1># pointer to sigaction struct</f1>            ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>            <f1># pointer to old sigaction struct (NULL)</f1>           ║
+║       <f><pu>mov</pu> <g>r10</g>, 8</f>                                                                 ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>rax</g>, 0x111</f>          <f1># testing values</f1>                                   ║
+║       <f><pu>mov</pu> <g>rbx</g>, 0x222</f>                                                             ║
+║       <f><pu>mov</pu> <g>rcx</g>, 0x333</f>                                                             ║
+║       <f><pu>mov</pu> <g>rdx</g>, 0x444</f>                                                             ║
+║       <f><pu>mov</pu> <g>rsi</g>, 0x555</f>                                                             ║
+║       <f><pu>mov</pu> <g>rdi</g>, 0x666</f>                                                             ║
+║       <f><pu>mov</pu> <g>r8</g>,  0x777</f>                                                             ║
+║       <f><pu>mov</pu> <g>r9</g>,  0x888</f>                                                             ║
+║       <f><pu>mov</pu> <g>r10</g>, 0x999</f>                                                             ║
+║       <f><pu>mov</pu> <g>r11</g>, 0xaaa</f>                                                             ║
+║       <f><pu>mov</pu> <g>r12</g>, 0xbbb</f>                                                             ║
+║       <f><pu>mov</pu> <g>r13</g>, 0xccc</f>                                                             ║
+║       <f><pu>mov</pu> <g>r14</g>, 0xddd</f>                                                             ║
+║       <f><pu>mov</pu> <g>r15</g>, 0xeee</f>                                                             ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r11</g>, [0]</f>                <f1># cause SigSegV</f1>                                ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ So - if we breakpoint at the signal handler, and inspect the memory section      ║
+║ from the addresses for the first 32 double QWORDs contained on the stack, this   ║
+║ should be where the ucontext is stored <f1>(x/32gx $rsp)</f1>:                            ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <f1>0x7fffffffd8f8:</f1> <bl>0x40100f</bl> <f>|<y>_restorer</y>|</f>    <bl>0x7</bl>                                      ║
+║ <f1>0x7fffffffd908:</f1> <bl>0x0</bl>                     <bl>0x0</bl>                                      ║
+║ <f1>0x7fffffffd918:</f1> <bl>0x2</bl>                     <bl>0x0</bl>                                      ║
+║ <f1>0x7fffffffd928:</f1> <bl>0x777</bl>                   <bl>0x888</bl>                                    ║
+║ <f1>0x7fffffffd938:</f1> <bl>0x999</bl>                   <bl>0xaaa</bl>                                    ║
+║ <f1>0x7fffffffd948:</f1> <bl>0xbbb</bl>                   <bl>0xccc</bl>                                    ║
+║ <f1>0x7fffffffd958:</f1> <bl>0xddd</bl>                   <bl>0xeee</bl>                                    ║
+║ <f1>0x7fffffffd968:</f1> <bl>0x666</bl>                   <bl>0x555</bl>                                    ║
+║ <f1>0x7fffffffd978:</f1> <bl>0x0</bl>                     <bl>0x222</bl>                                    ║
+║ <f1>0x7fffffffd988:</f1> <bl>0x444</bl>                   <bl>0x111</bl>                                    ║
+║ <f1>0x7fffffffd998:</f1> <bl>0x333</bl>                   <bl>0x7fffffffdea0</bl>                           ║
+║ <f1>0x7fffffffd9a8:</f1> <bl>0x40109b</bl> <f>|<y>_start</y>+<bl>131</bl>|</f>   <bl>0x10246</bl>                                  ║
+║ <f1>0x7fffffffd9b8:</f1> <bl>0x2b000000000033</bl>        <bl>0x4</bl>                                      ║
+║ <f1>0x7fffffffd9c8:</f1> <bl>0xe</bl>                     <bl>0x0</bl>                                      ║
+║ <f1>0x7fffffffd9d8:</f1> <bl>0x0</bl>                     <bl>0x7fffffffdac0</bl>                           ║
+║ <f1>0x7fffffffd9e8:</f1> <bl>0x0</bl>                     <bl>0x0</bl>                                      ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Our "test" values appear a bit scattered around the place. By counting the       ║
+║ offsets from the stack pointer for each one, we can reconstruct what the         ║
+║ ucontext structure looks like:                                                   ║
+║                                                                                  ║
+║ Byte offset from <g>rsp</g> <f1>---┐</f1>                                                        ║
+║                         <f1>↓</f1>                                                        ║
+║                                                                                  ║
+║ <f><bl>000</bl>|<bl>001</bl>|<bl>003</bl>|<bl>004</bl>|<bl>005</bl>|<bl>006</bl>|<bl>007</bl>|<bl>008</bl>|<bl>009</bl>|<bl>010</bl>|<bl>011</bl>|<bl>012</bl>|<bl>013</bl>|<bl>014</bl>|<bl>015</bl>|<bl>016</bl>|<bl>017</bl>|<bl>018</bl>|<bl>019</bl>|<bl>020</bl>|</f> ║
+║                      <f>|   |   |   |   |   |   |   |   |   |   |   |   |   |   |</f>   ║
+║                      <f>|   |   |   |   |   |   |   |   |   |   |   |   |   |   |</f>   ║
+║                    <f>|<g>r8</g> |<g>r9</g> |<g>r10</g>|<g>r11</g>|<g>r12</g>|<g>r13</g>|<g>r14</g>|<g>r15</g>|<g>rdi</g>|<g>rsi</g>|   |<g>rbx</g>|<g>rdx</g>|<g>rax</g>|<g>rcx</g>|</f> ║
+║                                                                                  ║
+║                                                      <f1>↑</f1>                           ║
+║                     Corresponding stored registers <f1>--┘</f1>                           ║
+║                                                                                  ║
+║ This allows us to pass information from the faulting program <f1>(our xor script)</f1>    ║
+║ directly to the signal handler. For instance, let's say we wanted to invoke any  ║
+║ given systemcall - we could load the arguments for that into <g>rax</g>, <g>rbx</g> and <g>rcx</g>    ║
+║ and then cause a fault. The signal handler then could read the areas from the    ║
+║ ucontext structure corresponding to the saved registers <f1>(rsp+19*8 for rax,       ║
+║ rsp+17*8 for rbx and rcx+20*8 for rcx)</f1> and then execute the <pu>syscall</pu>. Importantly ║
+║ it also allows our handler to communicate with the faulting script, as the       ║
+║ ucontext structure is used to restore registers when passing back execution      ║
+║ flow.                                                                            ║
+║                                                                                  ║
+║ Let's test this idea, by creating a signal handler that writes "0xdead" to       ║
+║ <g>rsp</g>+19*8 <f1>(rax)</f1> and inspecting <g>rax</g> once code flow returns to the faulting         ║
+║ program. We can do this by adding:                                               ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <o>dword ptr</o> [<g>rsp</g> + <bl>19</bl>*<bl>8</bl>], <bl>0xdead</bl></f>                                         ║
+║                                                                                  ║
+║ To the signal handler code.                                                      ║
+║                                                                                  ║
+║ Once in GDB, we set a breakpoint at the signal handler, and when it hits we can  ║
+║ step through the instructions until the flow returns to our faulting program.    ║
+║ At this point, inspecting the registers shows that <g>rax</g> contains 0xdead!          ║
+║                                                                                  ║
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[ 3 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Now that I <f1>(partially)</f1> understand how the handler works, lets try make one that  ║
+║ does our <pu>syscall</pu>s for us                                                         ║
+║                                                                                  ║
+║ There is one big problem in our way, which is that the signal handler's job is   ║
+║ to actually handle the faults - we currently do no such thing. When our program  ║
+║ hits a fault, and the signal handler is done, we are just dumped back into our   ║
+║ program at the very same faulting instruction, where we fault all over again     ║
+║                                                                                  ║
+║ Fair warning, if you tell your GDB to ignore <r>SegFault</r>s, and register a           ║
+║ <y>_sig_handler</y> that doesn't do anything, it may spam error messages until it       ║
+║ crashes your system <f1>(it did to mine...)</f1>                                          ║
+║                                                                                  ║
+║ How does the signal handler know where to put us? turns out, it uses ucontext    ║
+║ again, this time reading the instruction pointer <f1>(rip)</f1> - and passing that to the ║
+║ restore <pu>syscall</pu> so we get plopped out at the same place in instruction flow      ║
+║                                                                                  ║
+║ after some searching, I found where <g>rip</g> is stored in ucontext <f1>(rsp + 22*8)</f1>.      ║
+║ Thankfully, the usual write protections present to prevent us from directly      ║
+║ writing to <g>rip</g> are not present in the version saved to ucontext!                 ║
+║                                                                                  ║
+║ in our example script, the faulting instruction:                                 ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r11</g>, [0]</f>                                                               ║
+║                                                                                  ║
+║ is encoded with the following bytecode:                                          ║
+║                                                                                  ║
+║       <bl>0x4c    0x8b    0x1c    0x25    0x00    0x00    0x00    0x00</bl>               ║
+║                                                                                  ║
+║ so, in theory, if we know that <g>rip</g> points to the start of this instruction, then ║
+║ <g>rip</g> + <bl>8</bl> would point to the instruction directly afterwards. Allowing the flow of ║
+║ execution to continue past it                                                    ║
+║                                                                                  ║
+║ lets make a program to test this assumption:                                     ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>.global _sig_handler</y>                                                             ║
+║                                                                                  ║
+║ <y>.section .data</y>                                                                   ║
+║ <y>.align 8</y>                                                                         ║
+║ <y>_sigaction:</y>                                                                      ║
+║       <f><o>.quad</o> <y>_sig_handler</y></f>      <f1># pointer to the handler</f1>                           ║
+║       <f><o>.quad</o> <bl>0x04000000</bl></f>                                                           ║
+║       <f><o>.quad</o> <y>_restorer</y></f>                                                            ║
+║       <f><o>.quad</o> <bl>0</bl></f>                                                                    ║
+║                                                                                  ║
+║ <y>.section .text</y>                                                                   ║
+║ <y>_sig_handler:</y>                                                                    ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>            <f1># clear rax</f1>                                        ║
+║       <f><pu>add</pu> <g>rax</g>, [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>]</f>   <f1># rax = stored rip</f1>                                 ║
+║       <f><pu>add</pu> <g>rax</g>, <bl>0x8</bl></f>            <f1># rax = stored rip+8</f1>                               ║
+║       <f><pu>mov</pu> [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>], <g>rax</g></f>   <f1># move rip+8 to stored rip</f1>                         ║
+║       <f><pu>ret</pu></f>                                                                        ║
+║                                                                                  ║
+║ <y>_restorer:</y>                                                                       ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>15</bl></f>             <f1># rt_sigreturn</f1>                                     ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>13</bl></f>             <f1># syscall for sigaction</f1>                            ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>11</bl></f>             <f1># signum for SigSegV</f1>                               ║
+║       <f><pu>lea</pu> <g>rsi</g>, [<g>rip</g> + <y>_sigaction</y>]</f>       <f1># pointer to sigaction struct</f1>            ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>            <f1># pointer to old sigaction struct</f1>                  ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>8</bl></f>                                                                 ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║                                                                                  ║
+║       <f><pu>mov</pu> <g>r11</g>, [<bl>0</bl>]</f>            <f1># cause SigSegV</f1>                                    ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0xcaff</bl></f>         <f1># new landing instruction</f1>                          ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ once again, we break on <y>_sig_handler</y> and step through until we are put back into ║
+║ our <y>_start</y> function, directly at our intended landing instruction. Bingo         ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <r>Breakpoint 2</r>, <y>_sig_handler</y> <f1>()</f1> at testing_controlflow.s:15                        ║
+║ 15          <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                        <f1># clear rax</f1>                      ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ 16           <f><pu>add</pu> <g>rax</g>, [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>]</f>               <f1># rax = stored rip</f1>              ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ 17           <f><pu>add</pu> <g>rax</g>, <bl>0x8</bl></f>                        <f1># rax = stored rip+8</f1>            ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ 18           <f><pu>mov</pu> [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>], <g>rax</g></f>               <f1># move rip+8 to stored rip</f1>      ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ 19           <f><pu>ret</pu></f>                                                                 ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ <y>_restorer</y> <f1>()</f1> at testing_controlflow.s:22                                         ║
+║ 22           <f><pu>mov</pu> <g>rax</g>, <bl>15</bl></f>                         <f1># rt_sigreturn</f1>                  ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ 23           <f><pu>syscall</pu></f>                                                             ║
+║ <f1>(gdb)</f1> si                                                                         ║
+║ <y>_start</y> <f1>()</f1> at testing_controlflow.s:35                                            ║
+║ 35           <f><pu>mov</pu> <g>rax</g>, <bl>0xcaff</bl></f>                     <f1># new landing instruction</f1>       ║
+╠══------------------------------------------------------------------------------══╣
+╠══════════════════════════════════════════════════════════════════════════════════╣
+╠══-----==<o>[ 4 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ I think we have all the tools required to write a <pu>syscall</pu>-less script that       ║
+║ invokes one. As the final aim for this blogpost, I'll try to craft a PoC         ║
+║                                                                                  ║
+║ Let's start with a basic script idea; print to the screen and then exit. I shall ║
+║ leave any conditional statements for later - as they will add a lot of visual    ║
+║ clutter without much logical complexity <f1>(beyond just combining the methods)</f1>      ║
+║                                                                                  ║
+║ For additional simplicity, I'll use an 8 letter word; TRIANGLE. This way it can  ║
+║ fit entirely within one register. The little-endian ASCII encoding for TRIANGLE  ║
+║ is;                                                                              ║
+║                                                                                  ║
+║       <bl>0x454C474E41495254</bl>                                                         ║
+║                                                                                  ║
+║ we will be using the write <pu>syscall</pu>, and so need to populate the following        ║
+║ registers with the correct args:                                                 ║
+╠══------------------------------------------------------------------------------══╣
+║       <g>rax</g> = <bl>1</bl> <f1>(syscall for write)</f1>                                                ║
+║       <g>rdi</g> = <bl>1</bl> <f1>(we are writing to stdout)</f1>                                         ║
+║       <g>rsi</g> = <bl>char buffer</bl>                                                          ║
+║       <g>rdx</g> = <bl>len of chars</bl>                                                         ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ And for the exit "<pu>syscall</pu>", we will just use the <r>SigIll</r> instruction from before  ║
+║                                                                                  ║
+║ Okay, this took way longer than I thought it would. Here I go again              ║
+║ underestimating the complexity of "small" tasks. Some fun excerpts include:      ║
+╠══------------------------------------------------------------------------------══╣
+║       forgetting that <pu>xor</pu> cannot take imm 64 values - so only 4 characters max   ║
+║                                                                                  ║
+║       having to spread TRIANGLE over two registers instead                       ║
+║                                                                                  ║
+║       issues with getting a pointer to our string using <pu>xor</pu> only                 ║
+║                                                                                  ║
+║       trying to put the pointer logic inside the <y>_sig_handler</y> instead            ║
+║                                                                                  ║
+║       resorting to using the stack, and stack pointers                           ║
+║                                                                                  ║
+║       forgetting that using the stack will offset the whole ucontext struct      ║
+║                                                                                  ║
+║       having to offset the ucontext relative addressing by 8                     ║
+║                                                                                  ║
+║       reordering the <y>_sig_handler</y> so I don't have to offset the addressing       ║
+║                                                                                  ║
+║       problems with the length arg, so offloading that to the <y>_sig_handler</y> too   ║
+║                                                                                  ║
+║       found out the issue was my addressing - so <pu>mov</pu>ed it back to <y>_start</y>         ║
+║                                                                                  ║
+║       cleaning up the stack to ensure the ucontext <g>rip</g> is found correctly        ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ All that being said, I did manage to get a working program that I am happy with. ║
+║ Looking at this stuff really brings to focus how much better more modern code    ║
+║ conveys dense information, assembly really just starts to resemble grains of     ║
+║ sand once you stare at it for too long. As such, I've included a "high" level    ║
+║ abstraction of the program below:                                                ║
+║                                                                                  ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.PREFIX_STUFF</y>                                                                    ║
+║                                                                                  ║
+║ <y>_SIGACTION_STRUCT:</y>                                                               ║
+║       <f>struct stuff</f>                                                               ║
+║                                                                                  ║
+║ <y>_SIGNAL_HANDLER:</y>                                                                 ║
+║                                                                                  ║
+║       <f>move saved <g>rax</g> <f1>-></f1> <g>rax</g></f>                                                      ║
+║       <f>move saved <g>rdi</g> <f1>-></f1> <g>rdi</g></f>                                                      ║
+║       <f>move saved <g>rdx</g> <f1>-></f1> <g>rdx</g></f>                                                      ║
+║       <f>move saved <g>r12</g> <f1>-></f1> <g>r12</g></f>                                                      ║
+║                                                                                  ║
+║       <f>reserve 8 bytes on the stack</f>                                               ║
+║       <f>put <g>r12</g> onto the stack</f>                                                     ║
+║       <f>move pointer to <g>r12</g> <f1>-></f1> <g>rsi</g></f>                                                 ║
+║                                                                                  ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║       <f>clean up the stack</f>                                                         ║
+║                                                                                  ║
+║       <f><pu>mov</pu>e saved <g>rip</g> <f1>-></f1> <g>rax</g></f>                                                      ║
+║       <f>add 8 to <g>rax</g></f>                                                               ║
+║       <f>move <g>rax</g> <f1>-></f1> saved <g>rip</g> location</f>                                             ║
+║                                                                                  ║
+║       <f><pu>ret</pu></f>                                                                        ║
+║                                                                                  ║
+║ <y>_RESTORER_FUNCTION:</y>                                                              ║
+║       <f>restorer <pu>syscall</pu></f>                                                           ║
+║                                                                                  ║
+║ <y>_START:</y>                                                                          ║
+║                                                                                  ║
+║       <f>setup signal handler</f>                                                       ║
+║                                                                                  ║
+║       <f>store TRIA in <g>r12</g></f>                                                          ║
+║       <f>move 1 <f1>-></f1> <g>rax</g></f>                   <f1># 1 = syscall for write</f1>                    ║
+║       <f>move 1 <f1>-></f1> <g>rdi</g></f>                   <f1># 1 = arg for "to console"</f1>                 ║
+║       <f>move len of TRIA <f1>-></f1> <g>rdx</g></f>                                                    ║
+║                                                                                  ║
+║       <f><r>SegFault</r></f>                                                                   ║
+║                                                                                  ║
+║       <f>store NGLE in <g>r12</g></f>               <f1># we reuse args here</f1>                       ║
+║                                                                                  ║
+║       <f><r>SegFault</r></f>                                                                   ║
+║                                                                                  ║
+║       <f><r>SigIll</r></f>                          <f1># illegal instruction exit</f1>                 ║
+╠══------------------------------------------------------------------------------══╣
+╠══════════════════════════════════════════════════════════════════════════════════╣ 
+╠══-----==<o>[ 5 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ While this is entirely "functional" <f1>(for our purposes)</f1> there are still some      ║
+║ small tradeoffs this approach forces us to deal with. Despite our <y>_start</y>         ║
+║ function now being non-<pu>xor</pu> free, we do have to include at least three <pu>syscall</pu>s.  ║
+║ One in the code that sets up the <y>_sig_handler</y>, one in the <y>_sig_handler</y> itself    ║
+║ and another in the <y>_restorer</y>.                                                    ║
+║                                                                                  ║
+║ In writing the asm for this, I defaulted to my usual <f1>(and unforgivable)</f1> trait of ║
+║ using <pu>mov</pu> instructions. Going through and replacing them was not too tricky,     ║
+║ only requiring me to remember that <pu>xor</pu> cannot operate directly on dereferenced   ║
+║ memory.                                                                          ║
+║                                                                                  ║
+║ The final non-<pu>xor</pu> instruction count comes to 8 <f1>(which I am happy with)</f1>:          ║
+╠══------------------------------------------------------------------------------══╣
+║       1x <pu>sub</pu>                                                                     ║
+║       1x <pu>ret</pu>                                                                     ║
+║       1x <pu>lea</pu>                                                                     ║
+║       2x <pu>add</pu>                                                                     ║
+║       3x <pu>syscall</pu>                                                                 ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ The logical next step would be to combine this functionality with our            ║
+║ non-branching conditional logic from previous blogs to make a more interesting   ║
+║ program. I'm undecided on what that should be - a full calculator seems a little ║
+║ tricky, but interesting, perhaps a simple text adventure?                        ║
+║                                                                                  ║
+║ Feel free to ping me some ideas, though I reserve the right to refuse!           ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════════╗
+╠══-----==<o>[ 6 ]</o>==----------------------------------------------------------------══╣
+║                                                                                  ║
+║ Of those who have been sufficiently interested to read thus far, there may be a  ║
+║ further subsection who would be curious to see the full code for this program,   ║
+║ so I'll put that here:                                                           ║
+║                                                                                  ║
+║ <f1>(Please excuse my comments, I appear to not be able to follow a rubric, and      ║
+║ each time I program they turn out different, nonetheless hopefully they help     ║
+║ explain what each part does)</f1>                                                     ║
+╠══------------------------------------------------------------------------------══╣
+║ <y>.intel_syntax noprefix</y>                                                           ║
+║ <y>.global _start</y>                                                                   ║
+║ <y>.global _sig_handler</y>                                                             ║
+║                                                                                  ║
+║ <y>.section .data</y>                                                                   ║
+║ <y>.align 8</y>                                                                         ║
+║ <y>_sigaction:</y>                                                                      ║
+║       <f><o>.quad</o> <y>_sig_handler</y></f>                  <f1># pointer to the handler</f1>               ║
+║       <f><o>.quad</o> <bl>0x04000000</bl></f>                                                           ║
+║       <f><o>.quad</o> <y>_restorer</y></f>                                                            ║
+║       <f><o>.quad</o> <bl>0</bl></f>                                                                    ║
+║                                                                                  ║
+║ <y>.section .text</y>                                                                   ║
+║ <y>_sig_handler:</y>                                                                    ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rsp</g> + <bl>19</bl>*<bl>8</bl>]</f>               <f1># move saved rax to rax</f1>                ║
+║       <f><pu>xor</pu> <g>rdi</g>, <g>rdi</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdi</g>, [<g>rsp</g> + <bl>14</bl>*<bl>8</bl>]</f>               <f1># move saved rdi to rdi</f1>                ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdx</g>, [<g>rsp</g> + <bl>18</bl>*<bl>8</bl>]</f>               <f1># move saved rdx to rdx</f1>                ║
+║       <f><pu>xor</pu> <g>r12</g>, <g>r12</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r12</g>, [<g>rsp</g> + <bl>10</bl>*<bl>8</bl>]</f>               <f1># move saved r12 to r12</f1>                ║
+║                                                                                  ║
+║       <f><pu>sub</pu> <g>rsp</g>, <bl>8</bl></f>                          <f1># reserve some stack space for chars</f1>   ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, <g>r11</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r11</g>, [<g>rsp</g>]</f>                                                             ║
+║       <f><pu>xor</pu> [<g>rsp</g>], <g>r11</g></f>                      <f1># zeroing out *rsp</f1>                     ║
+║                                                                                  ║
+║       <f><pu>xor</pu> qword ptr [<g>rsp</g>], <g>r12</g></f>            <f1># pointer to r12</f1>                       ║
+║       <f><pu>xor</pu> <g>rsi</g>, <g>rsi</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rsi</g>, <g>rsp</g></f>                                                               ║
+║                                           <f1># take care about ucontext offset</f1>      ║
+║       <f><pu>syscall</pu></f>                             <f1># execute the syscall</f1>                  ║
+║                                                                                  ║
+║       <f><pu>add</pu> <g>rsp</g>, <bl>0x8</bl></f>                        <f1># clean stack</f1>                          ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                        <f1># clear rax</f1>                            ║
+║       <f><pu>xor</pu> <g>rax</g>, [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>]</f>               <f1># rax = stored rip</f1>                     ║
+║       <f><pu>add</pu> <g>rax</g>, <bl>0x8</bl></f>                        <f1># rax = stored rip+8</f1>                   ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, <g>r11</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r11</g>, [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>]</f>                                                      ║
+║       <f><pu>xor</pu> [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>], <g>r11</g></f>               <f1># zeroing out *[rsp + 22*8]</f1>            ║
+║                                                                                  ║
+║       <f><pu>xor</pu> [<g>rsp</g> + <bl>22</bl>*<bl>8</bl>], <g>rax</g></f>               <f1># move rip+8 to stored rip</f1>             ║
+║                                                                                  ║
+║       <f><pu>ret</pu></f>                                                                        ║
+║                                                                                  ║
+║ <y>_restorer:</y>                                                                       ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, 15</f>                         <f1># rt_sigreturn</f1>                         ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║ <y>_start:</y>                                                                          ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <bl>13</bl></f>                         <f1># syscall for sigaction</f1>                ║
+║       <f><pu>xor</pu> <g>rdi</g>, <g>rdi</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdi</g>, <bl>11</bl></f>                         <f1># signum for SigSegV</f1>                   ║
+║       <f><pu>lea</pu> <g>rsi</g>, [<g>rip</g> + <y>_sigaction</y>]</f>         <f1># pointer to sigaction struct</f1>          ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                        <f1># pointer to old sigaction struct</f1>      ║
+║       <f><pu>xor</pu> <g>r10</g>, <g>r10</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r10</g>, <bl>8</bl></f>                                                                 ║
+║       <f><pu>syscall</pu></f>                                                                    ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r12</g>, <g>r12</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r12</g>, <bl>0x41495254</bl></f>                 <f1># r12 = TRIA</f1>                           ║
+║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rax</g>, <bl>0x1</bl></f>                        <f1># rax = syscall for write</f1>              ║
+║       <f><pu>xor</pu> <g>rdi</g>, <g>rdi</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdi</g>, <bl>0x1</bl></f>                        <f1># rdi = output, stdout</f1>                 ║
+║                                           <f1># pointer to TRIA by sig_handler</f1>       ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdx</g>, <bl>0x4</bl></f>                        <f1># len of TRIA (4 bytes)</f1>                ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, [<bl>0</bl>]</f>                        <f1># cause SigSegV</f1>                        ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r12</g>, <g>r12</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r12</g>, <bl>0x454C474E</bl></f>                 <f1># r12 = NGLE</f1>                           ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, [<bl>0</bl>]</f>                        <f1># cause SigSegV</f1>                        ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r12</g>, <g>r12</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>r12</g>, <bl>0x0a</bl></f>                       <f1># newline char</f1>                         ║
+║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>                                                               ║
+║       <f><pu>xor</pu> <g>rdx</g>, <bl>0x1</bl></f>                        <f1># length arg = 1</f1>                       ║
+║                                                                                  ║
+║       <f><pu>xor</pu> <g>r11</g>, [<bl>0</bl>]</f>                        <f1># cause SigSegV</f1>                        ║
+║                                           <f1># reuse other register values</f1>          ║
+║                                                                                  ║
+║       <f><o>.byte</o> <bl>0xF0</bl>, <bl>0x48</bl>, <bl>0x31</bl>, <bl>0xD8</bl></f>        <f1># illegal instruction exit</f1>             ║
+╠══------------------------------------------------------------------------------══╣
+║                                                                                  ║
+║ Until next time, <r>CWW</r> out                                                         ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+<bl>┏━━┓</bl>
+<a href="index.html">BACK</a>
+<bl>┗━━┛</bl>
+</pre>
