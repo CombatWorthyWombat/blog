@@ -173,7 +173,7 @@
 ║                                                                                  ║
 ║ Ideally, this should show up as an <pu>xor</pu> instruction when disassembled. However,   ║
 ║ when opening the executable in Binary Ninja <f1>(henceforth Binja)</f1>, we can see the   ║
-║ following for the relevant .text section:                                                 ║
+║ following for the relevant .text section:                                        ║
 ╠══------------------------------------------------------------------------------══╣
 ║     <f1>00401000</f1>        <bl>f0 .. .. ..   ??</bl>                                             ║
 ║     <f1>00401001</f1>        <bl>.. 48 31 d8   H1.</bl>                                            ║
@@ -298,7 +298,7 @@
 ║ little tricky, so I'll include the <y>_sig_handler</y> inside the main .elf             ║
 ║                                                                                  ║
 ║ The <pu>syscall</pu> for registering a signal handler for a specific signal is sigaction, ║
-║ which takes the <a href="https://linux.die.net/man/2/rt_sigaction">following arguments:</a>      ║
+║ which takes the <a href="https://linux.die.net/man/2/rt_sigaction">following arguments:</a>                                             ║
 ║                                                                                  ║
 ║     <f><g>sigaction</g>(<bl>signum</bl>, <bl>sigaction</bl>, <bl>sigaction_old</bl>)</f>                                  ║
 ║                                                                                  ║
