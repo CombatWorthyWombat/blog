@@ -53,7 +53,7 @@
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ As we have decided to try and produce code that runs within an operating         ║
-║ system's <f1>(in our case, Linux)</f1> we have to play by its rules. That means asking    ║
+║ system <f1>(in our case, Linux)</f1> we have to play by its rules. That means asking      ║
 ║ very politely when we require some functionality that is outside of our          ║
 ║ program's control                                                                ║
 ║                                                                                  ║
@@ -155,7 +155,7 @@
 ║ fault invocation. Given the way our <pu>xor</pu> program flow works <f1>(see previous blogs)</f1>  ║
 ║ we are likely to see <r>SegFault</r>s when things go wrong, so let's not confuse        ║
 ║ ourselves by adding <r>SegFault</r>s when things go right. Instead this will display    ║
-║ the IllegalInstruction error in console.                                         ║
+║ the <r>IllegalInstruction</r> error in console.                                         ║
 ║                                                                                  ║
 ║ so this is our pseudo-"exit" <pu>syscall</pu>:                                            ║
 ║                                                                                  ║
@@ -164,7 +164,7 @@
 ║ Unfortunately for us, GCC knows this would result in a fault, and doesn't allow  ║
 ║ you to compile this:                                                             ║
 ║                                                                                  ║
-║       Error: expecting lockable instruction after `lock'                         ║
+║       <r>Error:</r> expecting lockable instruction after `lock'                         ║
 ║                                                                                  ║
 ║ Instead, we need to directly compile from bytecode <f1>(eugh)</f1>. We can include this   ║
 ║ at the end of our files:                                                         ║
@@ -173,7 +173,7 @@
 ║                                                                                  ║
 ║ Ideally, this should show up as an <pu>xor</pu> instruction when disassembled. However,   ║
 ║ when opening the executable in Binary Ninja <f1>(henceforth Binja)</f1>, we can see the   ║
-║ following for the .text section:                                                 ║
+║ following for the relevant .text section:                                                 ║
 ╠══------------------------------------------------------------------------------══╣
 ║     <f1>00401000</f1>        <bl>f0 .. .. ..   ??</bl>                                             ║
 ║     <f1>00401001</f1>        <bl>.. 48 31 d8   H1.</bl>                                            ║
@@ -182,28 +182,28 @@
 ║ Interestingly it's decided to partition off the last three bytes, perhaps they   ║
 ║ are all utf-8 values? Regardless, it's clearly got this "wrong" - despite having ║
 ║ the correct bytecode to reconstruct the instructions, Binja has decided that     ║
-║ this section is non-code.                                                        ║
+║ this section is non-code                                                         ║
 ║                                                                                  ║
 ║ It turns out that <y>_start</y> is not assumed to be a legit entry point to disassemble ║
 ║ from, as sneaky malware authors could abuse that assumption to mess with the     ║
-║ read code flow.                                                                  ║
+║ real code flow                                                                   ║
 ║                                                                                  ║
 ║ Hiding opcodes from disassemblers is always something interesting to play with,  ║
 ║ so we might return to this another time, but for the time being - lets see if we ║
-║ can get Binja to display the instructions.                                       ║
+║ can get Binja to display the instructions                                        ║
 ║                                                                                  ║
 ║ By explicitly labelling <y>_start</y> as a:                                             ║
 ║                                                                                  ║
 ║       <f><y>.type _start</y>, <y>@function</y></f>                                                    ║
 ║                                                                                  ║
 ║ We shall make sure Binja knows it's a function - checking the disassembly view,  ║
-║ we can see that it isn't fixed at all. Hmmm.                                     ║
+║ we can see that it isn't fixed at all. Hmmm                                      ║
 ║                                                                                  ║
 ║ It seems that Binja knows x86 better than I, and notices that locking an <pu>xor</pu>     ║
 ║ with two register operands is illegal, and so doesn't assume it is actual code.  ║
 ║ Interestingly, this heuristic allows us to put any regular opcodes and arguments ║
 ║ afterwards, and Binja will also not mark these up as instructions -  since the   ║
-║ CPU would have faulted previously.                                               ║
+║ CPU would have faulted previously                                                ║
 ║                                                                                  ║
 ║ As a tentative solution, I shall use the <o>.byte</o> chunk as a substitution for the   ║
 ║ exit <pu>syscall</pu>, despite the disassembly issues                                     ║
@@ -298,7 +298,7 @@
 ║ little tricky, so I'll include the <y>_sig_handler</y> inside the main .elf             ║
 ║                                                                                  ║
 ║ The <pu>syscall</pu> for registering a signal handler for a specific signal is sigaction, ║
-║ which takes the following arguments: https://linux.die.net/man/2/rt_sigaction    ║
+║ which takes the <a href="https://linux.die.net/man/2/rt_sigaction">following arguments:</a>      ║
 ║                                                                                  ║
 ║     <f><g>sigaction</g>(<bl>signum</bl>, <bl>sigaction</bl>, <bl>sigaction_old</bl>)</f>                                  ║
 ║                                                                                  ║
