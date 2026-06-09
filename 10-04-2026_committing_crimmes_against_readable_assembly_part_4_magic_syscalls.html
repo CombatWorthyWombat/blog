@@ -101,9 +101,9 @@
 ║                                                                                  ║
 ║ We can sort of see the instructions, and where they map onto our snippet:        ║
 ╠══------------------------------------------------------------------------------══╣
-║       <f><pu>mov</pu> <g>rax</g>, 0x1</f>  <f1>-></f1>  <bl>48 c7 c0 01 00 00 00</bl>                                     ║
-║       <f><pu>mov</pu> <g>rdi</g>, 0x2</f>  <f1>-></f1>  <bl>48 c7 c3 02 00 00 00</bl>                                     ║
-║       <f><pu>mov</pu> <g>rsi</g>, 0x3</f>  <f1>-></f1>  <bl>48 c7 c1 03 00 00 00</bl>                                     ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x1</bl></f>  <f1>-></f1>  <bl>48 c7 c0 01 00 00 00</bl>                                     ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0x2</bl></f>  <f1>-></f1>  <bl>48 c7 c3 02 00 00 00</bl>                                     ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>0x3</bl></f>  <f1>-></f1>  <bl>48 c7 c1 03 00 00 00</bl>                                     ║
 ║       <f><pu>syscall</pu></f>       <f1>-></f1>  <bl>0f 05</bl>                                                    ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
@@ -408,9 +408,9 @@
 ║ <y>.align 8</y>                                                                         ║
 ║ <y>_sigaction:</y>                                                                      ║
 ║       <f><o>.quad</o> <y>_sig_handler</y></f>      <f1># pointer to the handler</f1>                           ║
-║       <f><o>.quad</o> 0x04000000</f>                                                           ║
+║       <f><o>.quad</o> <bl>0x04000000</bl></f>                                                           ║
 ║       <f><o>.quad</o> <y>_restorer</y></f>                                                            ║
-║       <f><o>.quad</o> 0</f>                                                                    ║
+║       <f><o>.quad</o> <bl>0</bl></f>                                                                    ║
 ║                                                                                  ║
 ║ <y>.section .text</y>                                                                   ║
 ║ <y>_sig_handler:</y>                                                                    ║
@@ -418,33 +418,33 @@
 ║       <f><pu>ret</pu></f>                                                                        ║
 ║                                                                                  ║
 ║ <y>_restorer:</y>                                                                       ║
-║       <f><pu>mov</pu> <g>rax</g>, 15</f>             <f1># rt_sigreturn</f1>                                     ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>15</bl></f>             <f1># rt_sigreturn</f1>                                     ║
 ║       <f><pu>syscall</pu></f>                                                                    ║
 ║                                                                                  ║
 ║ <y>_start:</y>                                                                          ║
-║       <f><pu>mov</pu> <g>rax</g>, 13</f>             <f1># syscall for sigaction</f1>                            ║
-║       <f><pu>mov</pu> <g>rdi</g>, 11</f>             <f1># signum for SigSegV</f1>                               ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>13</bl></f>             <f1># syscall for sigaction</f1>                            ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>11</bl></f>             <f1># signum for SigSegV</f1>                               ║
 ║       <f><pu>lea</pu> <g>rsi</g>, [<g>rip</g> + <y>_sigaction</y>]</f>       <f1># pointer to sigaction struct</f1>            ║
 ║       <f><pu>xor</pu> <g>rdx</g>, <g>rdx</g></f>            <f1># pointer to old sigaction struct (NULL)</f1>           ║
-║       <f><pu>mov</pu> <g>r10</g>, 8</f>                                                                 ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>8</bl></f>                                                                 ║
 ║       <f><pu>syscall</pu></f>                                                                    ║
 ║                                                                                  ║
-║       <f><pu>mov</pu> <g>rax</g>, 0x111</f>          <f1># testing values</f1>                                   ║
-║       <f><pu>mov</pu> <g>rbx</g>, 0x222</f>                                                             ║
-║       <f><pu>mov</pu> <g>rcx</g>, 0x333</f>                                                             ║
-║       <f><pu>mov</pu> <g>rdx</g>, 0x444</f>                                                             ║
-║       <f><pu>mov</pu> <g>rsi</g>, 0x555</f>                                                             ║
-║       <f><pu>mov</pu> <g>rdi</g>, 0x666</f>                                                             ║
-║       <f><pu>mov</pu> <g>r8</g>,  0x777</f>                                                             ║
-║       <f><pu>mov</pu> <g>r9</g>,  0x888</f>                                                             ║
-║       <f><pu>mov</pu> <g>r10</g>, 0x999</f>                                                             ║
-║       <f><pu>mov</pu> <g>r11</g>, 0xaaa</f>                                                             ║
-║       <f><pu>mov</pu> <g>r12</g>, 0xbbb</f>                                                             ║
-║       <f><pu>mov</pu> <g>r13</g>, 0xccc</f>                                                             ║
-║       <f><pu>mov</pu> <g>r14</g>, 0xddd</f>                                                             ║
-║       <f><pu>mov</pu> <g>r15</g>, 0xeee</f>                                                             ║
+║       <f><pu>mov</pu> <g>rax</g>, <bl>0x111</bl></f>          <f1># testing values</f1>                                   ║
+║       <f><pu>mov</pu> <g>rbx</g>, <bl>0x222</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>rcx</g>, <bl>0x333</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>rdx</g>, <bl>0x444</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>rsi</g>, <bl>0x555</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>rdi</g>, <bl>0x666</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r8</g>,  <bl>0x777</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r9</g>,  <bl>0x888</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r10</g>, <bl>0x999</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r11</g>, <bl>0xaaa</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r12</g>, <bl>0xbbb</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r13</g>, <bl>0xccc</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r14</g>, <bl>0xddd</bl></f>                                                             ║
+║       <f><pu>mov</pu> <g>r15</g>, <bl>0xeee</bl></f>                                                             ║
 ║                                                                                  ║
-║       <f><pu>mov</pu> <g>r11</g>, [0]</f>                <f1># cause SigSegV</f1>                                ║
+║       <f><pu>mov</pu> <g>r11</g>, [<bl>0</bl>]</f>                <f1># cause SigSegV</f1>                                ║
 ╠══------------------------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ So - if we breakpoint at the signal handler, and inspect the memory section      ║
@@ -532,7 +532,7 @@
 ║                                                                                  ║
 ║ in our example script, the faulting instruction:                                 ║
 ║                                                                                  ║
-║       <f><pu>mov</pu> <g>r11</g>, [0]</f>                                                               ║
+║       <f><pu>mov</pu> <g>r11</g>, [<bl>0</bl>]</f>                                                               ║
 ║                                                                                  ║
 ║ is encoded with the following bytecode:                                          ║
 ║                                                                                  ║
@@ -652,7 +652,7 @@
 ║                                                                                  ║
 ║       problems with the length arg, so offloading that to the <y>_sig_handler</y> too   ║
 ║                                                                                  ║
-║       found out the issue was my addressing - so <pu>mov</pu>ed it back to <y>_start</y>         ║
+║       found out the issue was my addressing - so moved it back to <y>_start</y>         ║
 ║                                                                                  ║
 ║       cleaning up the stack to ensure the ucontext <g>rip</g> is found correctly        ║
 ╠══------------------------------------------------------------------------------══╣
@@ -684,7 +684,7 @@
 ║                                                                                  ║
 ║       <f>clean up the stack</f>                                                         ║
 ║                                                                                  ║
-║       <f><pu>mov</pu>e saved <g>rip</g> <f1>-></f1> <g>rax</g></f>                                                      ║
+║       <f>move saved <g>rip</g> <f1>-></f1> <g>rax</g></f>                                                      ║
 ║       <f>add 8 to <g>rax</g></f>                                                               ║
 ║       <f>move <g>rax</g> <f1>-></f1> saved <g>rip</g> location</f>                                             ║
 ║                                                                                  ║
@@ -700,11 +700,11 @@
 ║       <f>store TRIA in <g>r12</g></f>                                                          ║
 ║       <f>move 1 <f1>-></f1> <g>rax</g></f>                   <f1># 1 = syscall for write</f1>                    ║
 ║       <f>move 1 <f1>-></f1> <g>rdi</g></f>                   <f1># 1 = arg for "to console"</f1>                 ║
-║       <f>move len of TRIA <f1>-></f1> <g>rdx</g></f>                                                    ║
+║       <f>move len of <bl>TRIA</bl> <f1>-></f1> <g>rdx</g></f>                                                    ║
 ║                                                                                  ║
 ║       <f><r>SegFault</r></f>                                                                   ║
 ║                                                                                  ║
-║       <f>store NGLE in <g>r12</g></f>               <f1># we reuse args here</f1>                       ║
+║       <f>store <bl>NGLE</bl> in <g>r12</g></f>               <f1># we reuse args here</f1>                       ║
 ║                                                                                  ║
 ║       <f><r>SegFault</r></f>                                                                   ║
 ║                                                                                  ║
@@ -782,7 +782,7 @@
 ║       <f><pu>xor</pu> <g>r11</g>, [<g>rsp</g>]</f>                                                             ║
 ║       <f><pu>xor</pu> [<g>rsp</g>], <g>r11</g></f>                      <f1># zeroing out *rsp</f1>                     ║
 ║                                                                                  ║
-║       <f><pu>xor</pu> qword ptr [<g>rsp</g>], <g>r12</g></f>            <f1># pointer to r12</f1>                       ║
+║       <f><pu>xor</pu> <o>qword ptr</o> [<g>rsp</g>], <g>r12</g></f>            <f1># pointer to r12</f1>                       ║
 ║       <f><pu>xor</pu> <g>rsi</g>, <g>rsi</g></f>                                                               ║
 ║       <f><pu>xor</pu> <g>rsi</g>, <g>rsp</g></f>                                                               ║
 ║                                           <f1># take care about ucontext offset</f1>      ║
@@ -804,7 +804,7 @@
 ║                                                                                  ║
 ║ <y>_restorer:</y>                                                                       ║
 ║       <f><pu>xor</pu> <g>rax</g>, <g>rax</g></f>                                                               ║
-║       <f><pu>xor</pu> <g>rax</g>, 15</f>                         <f1># rt_sigreturn</f1>                         ║
+║       <f><pu>xor</pu> <g>rax</g>, <bl>15</bl></f>                         <f1># rt_sigreturn</f1>                         ║
 ║       <f><pu>syscall</pu></f>                                                                    ║
 ║                                                                                  ║
 ║ <y>_start:</y>                                                                          ║
