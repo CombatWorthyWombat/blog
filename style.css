@@ -48,7 +48,7 @@ f1 { color: #78788C; } /* background grey */
 /* Class identifier */
 .blinkanim1 {
   animation-name: blink1;
-  animation-duration: .2s;
+  animation-duration: .5s;
   animation-iteration-count: 1;
   animation-timing-function: steps(1);
 }
