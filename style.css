@@ -32,3 +32,23 @@ a:focus { color: #689D6A; text-decoration: none; } /* turquiose - use for links 
 o { color: #FE8019; } /* orange */
 f { color: #EBDBB2; } /* muted white */
 f1 { color: #78788C; } /* background grey */
+
+/* Animation keyframes */
+@keyframes blink1 {
+  0% {opacity: 0;}
+  14.2% {opacity: 1;}
+  28.4% {opacity: 0;}
+  42.6% {opacity: 1;}
+  56.8% {opacity: 0;}
+  71% {opacity: 1;}
+  85.2% {opacity: 0;}
+  100%{opacity: 1;}
+}
+
+/* Class identifier */
+.blinkanim1 {
+  animation-name: blink1;
+  animation-duration: .2s;
+  animation-iteration-count: 1;
+  animation-timing-function: steps(1);
+}
