@@ -38,7 +38,7 @@
 ║ value depending on the result. While it is true that there is still a lot of     ║
 ║ tweaking to do to make that model work for the types of values we would want to  ║
 ║ be comparing, for the moment let's leave that be - and work on the next          ║
-║ conceptual piece <f1>(I have arbitrarily decided)</f1> we need: <pu>syscall</pu>s                  ║
+║ conceptual piece <f1>(I have arbitrarily decided)</f1> we need: <pu>syscalls</pu>                  ║
 ║                                                                                  ║
 ║ At the moment, our binary is only a program by sheer definition. If we ran it    ║
 ║ outside a debugger, or without a breakpoint, execution would just continue       ║
@@ -69,7 +69,7 @@
 ║                                                                                  ║
 ║       <f><pu>mov</pu> <g>rax</g>, [keyboard input address]</f>                                          ║
 ║                                                                                  ║
-║ Forces us to use these "<pu>syscall</pu>s" <f1>(here with the syscall instruction)</f1>:           ║
+║ Forces us to use these "<pu>syscalls</pu>" <f1>(here with the syscall instruction)</f1>:           ║
 ╠══------------------------------------------------------------------------------══╣
 ║       <f><pu>mov</pu> <g>rax</g>, <bl>arg1</bl></f>           <f1># args for "keyboard" syscall</f1>                      ║
 ║       <f><pu>mov</pu> <g>rdi</g>, <bl>arg2</bl></f>                                                              ║
@@ -153,8 +153,8 @@
 ║                                                                                  ║
 ║ I've decided to use the lock prefix without a memory operand for purposeful      ║
 ║ fault invocation. Given the way our <pu>xor</pu> program flow works <f1>(see previous blogs)</f1>  ║
-║ we are likely to see <r>SegFault</r>s when things go wrong, so let's not confuse        ║
-║ ourselves by adding <r>SegFault</r>s when things go right. Instead this will display    ║
+║ we are likely to see <r>SegFaults</r> when things go wrong, so let's not confuse        ║
+║ ourselves by adding <r>SegFaults</r> when things go right. Instead this will display    ║
 ║ the <r>IllegalInstruction</r> error in console.                                         ║
 ║                                                                                  ║
 ║ so this is our pseudo-"exit" <pu>syscall</pu>:                                            ║
@@ -208,7 +208,7 @@
 ║ As a tentative solution, I shall use the <o>.byte</o> chunk as a substitution for the   ║
 ║ exit <pu>syscall</pu>, despite the disassembly issues                                     ║
 ║                                                                                  ║
-║ As for trying to emulate other <pu>syscall</pu>s using fault behaviour, we aren't so      ║
+║ As for trying to emulate other <pu>syscalls</pu> using fault behaviour, we aren't so      ║
 ║ lucky. Basically all of them crash the program, just with slightly different     ║
 ║ fault messages. However, the signal handler may well come in handy later on...   ║
 ║                                                                                  ║
@@ -216,7 +216,7 @@
 ╠══-----==<o>[2:c]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Perhaps, if we could setup an environment where the keyboard and screen control  ║
-║ that is usually handled by <pu>syscall</pu>s, was instead mapped to specific regions of   ║
+║ that is usually handled by <pu>syscalls</pu>, was instead mapped to specific regions of   ║
 ║ virtual memory - we could just use relative addressing to use both of those      ║
 ║ features, just as some older systems used to.                                    ║
 ║                                                                                  ║
@@ -489,8 +489,8 @@
 ║ directly to the signal handler. For instance, let's say we wanted to invoke any  ║
 ║ given systemcall - we could load the arguments for that into <g>rax</g>, <g>rbx</g> and <g>rcx</g>    ║
 ║ and then cause a fault. The signal handler then could read the areas from the    ║
-║ ucontext structure corresponding to the saved registers <f1>(rsp+19*8 for rax,       ║
-║ rsp+17*8 for rbx and rcx+20*8 for rcx)</f1> and then execute the <pu>syscall</pu>. Importantly ║
+║ ucontext structure corresponding to the saved registers <f1>(rsp+19*8 for rax,</f1>       ║
+║ <f1>rsp+17*8 for rbx and rcx+20*8 for rcx)</f1> and then execute the <pu>syscall</pu>. Importantly ║
 ║ it also allows our handler to communicate with the faulting script, as the       ║
 ║ ucontext structure is used to restore registers when passing back execution      ║
 ║ flow.                                                                            ║
@@ -511,14 +511,14 @@
 ╠══-----==<o>[ 3 ]</o>==----------------------------------------------------------------══╣
 ║                                                                                  ║
 ║ Now that I <f1>(partially)</f1> understand how the handler works, lets try make one that  ║
-║ does our <pu>syscall</pu>s for us                                                         ║
+║ does our <pu>syscalls</pu> for us                                                         ║
 ║                                                                                  ║
 ║ There is one big problem in our way, which is that the signal handler's job is   ║
 ║ to actually handle the faults - we currently do no such thing. When our program  ║
 ║ hits a fault, and the signal handler is done, we are just dumped back into our   ║
 ║ program at the very same faulting instruction, where we fault all over again     ║
 ║                                                                                  ║
-║ Fair warning, if you tell your GDB to ignore <r>SegFault</r>s, and register a           ║
+║ Fair warning, if you tell your GDB to ignore <r>SegFaults</r>, and register a           ║
 ║ <y>_sig_handler</y> that doesn't do anything, it may spam error messages until it       ║
 ║ crashes your system <f1>(it did to mine...)</f1>                                          ║
 ║                                                                                  ║
@@ -715,7 +715,7 @@
 ║                                                                                  ║
 ║ While this is entirely "functional" <f1>(for our purposes)</f1> there are still some      ║
 ║ small tradeoffs this approach forces us to deal with. Despite our <y>_start</y>         ║
-║ function now being non-<pu>xor</pu> free, we do have to include at least three <pu>syscall</pu>s.  ║
+║ function now being non-<pu>xor</pu> free, we do have to include at least three <pu>syscalls</pu>.  ║
 ║ One in the code that sets up the <y>_sig_handler</y>, one in the <y>_sig_handler</y> itself    ║
 ║ and another in the <y>_restorer</y>.                                                    ║
 ║                                                                                  ║
